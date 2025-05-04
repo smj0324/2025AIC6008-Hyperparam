@@ -14,9 +14,6 @@ setuptools.setup(
     url="https://github.com/smj0324/2025AIC6008-Hyperparam", ##
     packages=setuptools.find_packages(),
     install_requires=[ ## TODO: 추후 의존성 수정
-        'tensorflow>=2.8.0',
-        'numpy>=1.20.0',
-        'requests',
     ],
     extras_require={}, # 선택적 의존성 추가
     classifiers=[
@@ -24,5 +21,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.12',
+    python_requires='>=3.9',
 )
