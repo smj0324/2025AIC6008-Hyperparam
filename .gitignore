@@ -1,0 +1,45 @@
+# Python defaults
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.log
+
+# Testing tools
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache/
+pytest_cache/
+
+# SQLite database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Development data
+data/
+logs/
+*.jsonl
+*.tmp
+*.bak
+
+# IDE and environment files
+.env
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+
+# Build and packaging files
+build/
+dist/
+*.egg
+*.whl
+
+# Metadata created during installation
+pip-wheel-metadata/

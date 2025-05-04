@@ -1,0 +1,1 @@
+# https://wikidocs.net/188088 참고 PyQt5
