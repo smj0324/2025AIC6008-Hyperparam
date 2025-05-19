@@ -1,16 +1,18 @@
 import tkinter as tk
+import os
 from tkinter import ttk
-from theme.fonts import DEFAULT_FONT, ERROR_FONT_LARGE, ERROR_FONT, ERROR_FONT_SMALL, ERROR_FONT_UNDERLINE
+from datetime import datetime
+from tuneparam.gui.theme.fonts import DEFAULT_FONT, ERROR_FONT_LARGE, ERROR_FONT, ERROR_FONT_SMALL, ERROR_FONT_UNDERLINE
 
-def setup_main_tab(tab_main, notebook, tab_train):
+def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_callback=None):
     username_var = tk.StringVar()
-    version_var = tk.StringVar()
-    hardware_var = tk.StringVar()
-    model_size_var = tk.StringVar()
-    dataset_size_var = tk.StringVar()
-    dataset_type_var = tk.StringVar()
-    model_type_var = tk.StringVar()
-    goal_var = tk.StringVar()
+    version_var = tk.StringVar(value=preset_data.get("Version", "") if preset_data else "")
+    hardware_var = tk.StringVar(value=preset_data.get("Hardware", "") if preset_data else "")
+    model_size_var = tk.StringVar(value=preset_data.get("Model Size", "") if preset_data else "")
+    dataset_size_var = tk.StringVar(value=preset_data.get("Dataset Size", "") if preset_data else "")
+    dataset_type_var = tk.StringVar(value=preset_data.get("Dataset Type", "") if preset_data else "")
+    model_type_var = tk.StringVar(value=preset_data.get("Model Type", "") if preset_data else "")
+    goal_var = tk.StringVar(value=preset_data.get("Goal", "") if preset_data else "")
 
     # ---- 폼 위젯을 리스트로 관리 ----
     form_widgets = []
@@ -60,7 +62,7 @@ def setup_main_tab(tab_main, notebook, tab_train):
     combo_dataset_size.grid(row=5, column=0, sticky="ew", padx=5)
     form_widgets.append(combo_dataset_size)
 
-    combo_model_type = ttk.Combobox(tab_main, textvariable=model_type_var, values=["Value", "Classification", "Regression"], state="readonly")
+    combo_model_type = ttk.Combobox(tab_main, textvariable=model_type_var, values=["MobilenetV4", "Resnet", "LSTM"], state="readonly")
     combo_model_type.grid(row=5, column=1, sticky="ew", padx=5)
     form_widgets.append(combo_model_type)
 
@@ -131,7 +133,12 @@ def setup_main_tab(tab_main, notebook, tab_train):
         for widget in form_widgets:
             widget.grid()
 
+    save_already_clicked = [False]
     def on_save():
+        if save_already_clicked[0]:
+            print("저장 버튼은 일단 한 번 만~")
+            return
+        save_already_clicked[0] = True
         data = {
             "Username": username_var.get(),
             "Version": version_var.get(),
@@ -145,8 +152,20 @@ def setup_main_tab(tab_main, notebook, tab_train):
         print(data)
         result = check_train_condition(data)
         if result:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            username = username_var.get() or "user"
+            version = version_var.get() or "version"
+            custom_log_dir = os.path.join("logs", f"{username}_{version}_{now}")
+            os.makedirs(custom_log_dir, exist_ok=True)
+
+            if set_log_dir_callback:
+                set_log_dir_callback(custom_log_dir, data)  # (data는 옵션)
             notebook.select(tab_train)
         else:
             show_error_message_in_main()
+
+        for widget in form_widgets:
+            widget.configure(state="disabled")
+        save_btn.configure(state="disabled")
 
     save_btn.config(command=on_save)
