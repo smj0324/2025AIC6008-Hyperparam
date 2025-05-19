@@ -22,8 +22,8 @@ pytest_cache/
 
 # Development data
 data/
-logs/
-*.jsonl
+# logs/
+# *.jsonl
 *.tmp
 *.bak
 
