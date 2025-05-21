@@ -3,9 +3,9 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from tuneparam.gui.part.utils import root, style, THEME_BG, set_theme, create_notebook_with_tabs, create_theme_buttons
-from tuneparam.gui.part.main_tap import setup_main_tab
-from tuneparam.gui.part.train_tab import setup_train_tab
+from gui.part.utils import root, style, THEME_BG, set_theme, create_notebook_with_tabs, create_theme_buttons
+from gui.part.main_tap import setup_main_tab
+from gui.part.train_tab import setup_train_tab
 from tuneparam.framework.keras_ import TrainingLogger
 
 def launch_experiment(
@@ -57,3 +57,4 @@ def launch_experiment(
 
     setup_train_tab(tab_train)
     root.mainloop()
+    
