@@ -21,9 +21,6 @@ def launch_experiment(
     set_theme("forest-light")
     root.option_add("*Font", '"나눔스퀘어_ac Bold" 11')
 
-    theme_frame = create_theme_buttons(root, set_theme)
-    theme_frame.grid(row=0, column=1, sticky="ne", padx=(0, 10), pady=(10, 0))
-
     notebook, tab_main, tab_train, tab_results = create_notebook_with_tabs(root)
     notebook.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=20, pady=20)
 
@@ -36,9 +33,26 @@ def launch_experiment(
 
     main_preset = preset_data or _preset_logger.get_preset_data_for_main_tab()
 
+    # Train 탭 초기 설정
+    train_handlers = setup_train_tab(tab_train)
+
+    # 테마 변경 핸들러
+    def handle_theme_change(theme_name):
+        is_dark = theme_name == "forest-dark"
+        set_theme(theme_name)
+        if train_handlers and "update_theme" in train_handlers:
+            train_handlers["update_theme"](is_dark)
+
+    theme_frame = create_theme_buttons(root, handle_theme_change)
+    theme_frame.grid(row=0, column=1, sticky="ne", padx=(0, 10), pady=(10, 0))
+
     # ===== TrainingLogger/fit 갱신 함수 =====
     def start_training_with_log_dir(new_log_dir, user_info):
         logger = TrainingLogger(log_dir=new_log_dir, params=params, X=X_train, y=y_train)
+        
+        # Train 탭 업데이트
+        train_handlers["start_monitoring"](new_log_dir, user_info)
+        
         def fit_thread():
             callbacks = [logger]
             if custom_callbacks:
@@ -55,6 +69,5 @@ def launch_experiment(
     setup_main_tab(tab_main, notebook, tab_train, preset_data=main_preset,
                    set_log_dir_callback=start_training_with_log_dir)
 
-    setup_train_tab(tab_train)
     root.mainloop()
     
