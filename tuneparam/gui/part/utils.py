@@ -30,7 +30,13 @@ def set_theme(theme):
     style.configure("TCombobox", font=DEFAULT_FONT)
     style.configure("TNotebook", font=DEFAULT_FONT)
     style.configure("TNotebook.Tab", font=DEFAULT_FONT)
-    style.configure("TLabel", font=("", 12))
+    style.configure("TLabelframe", font=DEFAULT_FONT)
+    style.configure("TLabelframe.Label", font=DEFAULT_FONT)
+    
+    # Canvas 배경색 업데이트
+    for widget in root.winfo_children():
+        if isinstance(widget, tk.Canvas):
+            widget.configure(bg=THEME_BG[theme])
 
 def create_notebook_with_tabs(parent):
     notebook = ttk.Notebook(parent)

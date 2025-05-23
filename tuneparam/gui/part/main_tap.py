@@ -159,8 +159,8 @@ def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_
             os.makedirs(custom_log_dir, exist_ok=True)
 
             if set_log_dir_callback:
-                set_log_dir_callback(custom_log_dir, data)  # (data는 옵션)
-            notebook.select(tab_train)
+                set_log_dir_callback(custom_log_dir, data)  # 모델 학습 시작 및 train 탭으로 전환
+                notebook.select(tab_train)  # train 탭으로 전환
         else:
             show_error_message_in_main()
 
