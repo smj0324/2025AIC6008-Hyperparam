@@ -1,6 +1,12 @@
 # models.py
-from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from tuneparam.database.db import Base
+
+from sqlalchemy import (
+    Column, Integer, String, ForeignKey, DateTime,
+    UniqueConstraint
+)
 
 class Student(Base):
     __tablename__ = "students"
@@ -10,15 +16,30 @@ class Student(Base):
 
 
 class User(Base):
-    __tablename__ = "User"
+    __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String, nullable=False)
-    version = Column(String, nullable=False)
-    hardware = Column(String)
-    model_size = Column(String)
-    dataset_size = Column(String)
-    model_type = Column(String)
-    dataset_type = Column(String)
-    goal = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id = Column(Integer, primary_key=True, autoincrement=True, name="id")
+    username = Column(String, nullable=False, name="username")
+    version = Column(String, nullable=False, name="version")
+    hardware = Column(String, name="hardware")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), name="created_at")
+
+    models = relationship("Model", back_populates="user", cascade="all, delete", lazy="selectin")
+
+class Model(Base):
+    __tablename__ = "models"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, name="id")
+    model_size = Column(String, nullable=False, name="model_size")
+    model_type = Column(String, nullable=False, name="model_type")
+    dataset_size = Column(String, name="dataset_size")
+    dataset_type = Column(String, name="dataset_type")
+    goal = Column(String, name="goal")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), name="created_at")
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, name="user_id")
+    user = relationship("User", back_populates="models", lazy="selectin")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "model_size", "model_type", name="uq_user_modelsize_type"),
+    )
