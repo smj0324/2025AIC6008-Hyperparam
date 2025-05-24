@@ -1,6 +1,3 @@
-GRAPH_FONT = ('Helvetica', 8)
-
-
 def draw_accuracy_graph(canvas, training_logs, colors):
     """Accuracy 그래프 그리기"""
     width = canvas.winfo_width()

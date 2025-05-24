@@ -146,11 +146,12 @@ def setup_log_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False):
     draw_loss_graph(loss_canvas, training_logs, colors)
 
 
-    # # Accuracy 그래프 설정
-    # acc_canvas = tk.Canvas(acc_frame, bg=colors['canvas_bg'], highlightthickness=0, width=300, height=200)
-    # acc_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    # Accuracy 그래프 설정
+    acc_canvas = tk.Canvas(acc_frame, bg=colors['canvas_bg'], highlightthickness=0, width=300, height=200)
+    acc_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     # setup_accuracy_graph(acc_canvas, colors)
     # draw_accuracy_graph(acc_canvas, training_logs, colors)  # ← 추가
+
 
 # 메인 코드와 연결하는 부분
 # 초기 파라미터 텍스트 설정
