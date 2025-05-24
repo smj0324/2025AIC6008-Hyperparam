@@ -16,6 +16,7 @@ class Model(Base):
     dataset_size = Column(String, name="dataset_size")
     dataset_type = Column(String, name="dataset_type")
     goal = Column(String, name="goal")
+    total_epoch = Column(Integer, default=0, nullable=False, name="total_epoch")  # 이 부분 추가
     created_at = Column(DateTime(timezone=True), server_default=func.now(), name="created_at")
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, name="user_id")

@@ -1,6 +1,9 @@
 import threading
 import sys
 import os
+
+from tuneparam.gui.part.log_tab import setup_log_tab
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from tuneparam.gui.part.utils import root, style, THEME_BG, set_theme, create_notebook_with_tabs, create_theme_buttons
@@ -21,7 +24,7 @@ def launch_experiment(
     set_theme("forest-light")
     root.option_add("*Font", '"나눔스퀘어_ac Bold" 11')
 
-    notebook, tab_main, tab_train, tab_results = create_notebook_with_tabs(root)
+    notebook, tab_main, tab_train, tab_results, tab_logs = create_notebook_with_tabs(root)
     notebook.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=20, pady=20)
 
     root.grid_rowconfigure(1, weight=1)
@@ -35,6 +38,7 @@ def launch_experiment(
 
     # Train 탭 초기 설정
     train_handlers = setup_train_tab(tab_train)
+    train_handlers = setup_log_tab(tab_logs)
 
     # 테마 변경 핸들러
     def handle_theme_change(theme_name):

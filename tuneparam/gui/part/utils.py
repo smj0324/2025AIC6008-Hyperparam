@@ -43,10 +43,13 @@ def create_notebook_with_tabs(parent):
     tab_main = ttk.Frame(notebook, padding=30)
     tab_train = ttk.Frame(notebook, padding=30)
     tab_results = ttk.Frame(notebook, padding=30)
+    tab_logs = ttk.Frame(notebook, padding=30)
+
     notebook.add(tab_main, text="Main")
     notebook.add(tab_train, text="Train")
     notebook.add(tab_results, text="Results")
-    return notebook, tab_main, tab_train, tab_results
+    notebook.add(tab_logs, text="Logs")
+    return notebook, tab_main, tab_train, tab_results, tab_logs
 
 def create_theme_buttons(parent, set_theme_callback):
     theme_frame = ttk.Frame(parent)
