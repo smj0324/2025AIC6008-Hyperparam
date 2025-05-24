@@ -1,6 +1,5 @@
 # main.py
 from tuneparam.database.db import SessionLocal, Base, engine
-from tuneparam.database.schema import models
 from tuneparam.database.CONT import TEST_USER, TEST_UPDATE_USER
 from tuneparam.database.service.dao import user_crud as crud
 import unittest
