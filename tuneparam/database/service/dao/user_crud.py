@@ -1,7 +1,7 @@
 # crud.py
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from tuneparam.database.schema.models import User
+from tuneparam.database.schema import User
 
 # CREATE
 def create_user(db: Session, user_data: dict) -> User:

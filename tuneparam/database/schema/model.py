@@ -21,6 +21,13 @@ class Model(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, name="user_id")
     user = relationship("User", back_populates="models", lazy="selectin")
 
+    training_logs = relationship(
+        "TrainingLog",
+        back_populates="model",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
+
     __table_args__ = (
         UniqueConstraint("user_id", "model_size", "model_type", name="uq_user_modelsize_type"),
     )

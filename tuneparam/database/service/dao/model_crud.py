@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 
-from tuneparam.database.schema.models import Model, User
+from tuneparam.database.schema import Model, User
 
 
 # CREATE - 특정 유저에게 모델 추가

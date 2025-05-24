@@ -38,3 +38,29 @@ TEST_UPDATE_MODEL = {
     "goal": "Speed"               # 목표 변경
 }
 
+
+
+TEST_LOG1 = {
+    "epoch": 0,
+    "loss": 0.7178,
+    "accuracy": 0.4875,
+    "val_loss": 0.7261,
+    "val_accuracy": 0.5
+}
+
+TEST_LOG2 = {
+    "epoch": 0,
+    "loss": 0.7178,
+    "accuracy": 0.4875,
+    "val_loss": 0.7261,
+    "val_accuracy": 0.5
+}
+
+
+TEST_LOG3 = {
+    "epoch": 0,
+    "loss": 0.7178,
+    "accuracy": 0.4875,
+    "val_loss": 0.7261,
+    "val_accuracy": 0.5
+}
