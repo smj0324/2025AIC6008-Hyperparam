@@ -36,7 +36,7 @@ def convert_json_serializable_key(key):
 
 
 class TrainingLogger(Callback):
-    def __init__(self, log_dir="logs", params=None, X=None, y=None):
+    def __init__(self, log_dir="logs", params=None, summary_params = None, X=None, y=None):
         super().__init__()
         self.log_dir = log_dir
         os.makedirs(self.log_dir, exist_ok=True)
@@ -46,6 +46,8 @@ class TrainingLogger(Callback):
         self.logs = []
         self.start_time = None
         self.params_info = params if params else {}
+
+        self.summary = summary_params
 
         if y is not None:
             labels, counts = np.unique(y, return_counts=True)
@@ -141,6 +143,22 @@ class TrainingLogger(Callback):
         for cb in getattr(self.model, 'callbacks', []):
             if isinstance(cb, EarlyStopping):
                 early_stopping_epoch = cb.stopped_epoch
+        print(self.summary)
+        self.summary.update({
+            "best_epoch": best_epoch,
+            "best_accuracy": max((l.get("val_accuracy", l.get("accuracy", 0)) for l in self.logs), default=None),
+            "train_end_time": end_time.isoformat(),
+        })
+        print(self.summary)
+
+        log_chunks = {}
+        chunk_size = 10
+        for i in range(0, len(self.logs), chunk_size):
+            chunk_index = i // chunk_size
+            log_chunks[f'logs_{chunk_index}'] = self.logs[i:i + chunk_size]
+        self.summary["logs_by_chunks"] = log_chunks
+
+        print(self.summary)
 
         summary = {
             "hyperparameters": self.params_info,

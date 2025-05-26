@@ -17,7 +17,7 @@ model = Sequential([
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 training_params = {
-    "epochs": 5,                      # 전체 학습 반복 수
+    "epochs": 100,                      # 전체 학습 반복 수
     "batch_size": 16,                 # 미니배치 크기
     "validation_split": 0.2,          # 학습 데이터의 20%를 검증에 사용
     "shuffle": True,                  # 에포크마다 데이터 셔플

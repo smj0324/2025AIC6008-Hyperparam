@@ -3,7 +3,8 @@ import sys
 import os
 
 from tuneparam.gui.part.log_tab import setup_log_tab
-
+from tuneparam.gui.part.results import setup_results_tab
+import copy
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from tuneparam.gui.part.utils import root, style, THEME_BG, set_theme, create_notebook_with_tabs, create_theme_buttons
@@ -24,6 +25,7 @@ def launch_experiment(
     set_theme("forest-light")
     root.option_add("*Font", '"나눔스퀘어_ac Bold" 11')
 
+    # notebook, tab_main, tab_train, tab_results, tab_logs = create_notebook_with_tabs(root)
     notebook, tab_main, tab_train, tab_results, tab_logs = create_notebook_with_tabs(root)
     notebook.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=20, pady=20)
 
@@ -32,13 +34,15 @@ def launch_experiment(
     root.grid_columnconfigure(1, weight=0)
 
     params = training_params or {"epochs": 10, "batch_size": 32, "validation_split": 0.2}
-    _preset_logger = TrainingLogger(log_dir=log_dir, params=params, X=X_train, y=y_train)
+    default_params = {"epochs": 10, "batch_size": 32, "validation_split": 0.2}
 
+    summary_params = copy.deepcopy(training_params) if training_params else copy.deepcopy(default_params)
+    _preset_logger = TrainingLogger(log_dir=log_dir, params=params, X=X_train, y=y_train, summary_params=summary_params)
     main_preset = preset_data or _preset_logger.get_preset_data_for_main_tab()
 
     # Train 탭 초기 설정
     train_handlers = setup_train_tab(tab_train)
-    train_handlers = setup_log_tab(tab_logs)
+    setup_results_tab(tab_results, train_parameters=summary_params)
 
     # 테마 변경 핸들러
     def handle_theme_change(theme_name):
@@ -52,7 +56,7 @@ def launch_experiment(
 
     # ===== TrainingLogger/fit 갱신 함수 =====
     def start_training_with_log_dir(new_log_dir, user_info):
-        logger = TrainingLogger(log_dir=new_log_dir, params=params, X=X_train, y=y_train)
+        logger = TrainingLogger(log_dir=new_log_dir, params=params, X=X_train, y=y_train, summary_params=summary_params)
         
         # Train 탭 업데이트
         train_handlers["start_monitoring"](new_log_dir, user_info)
@@ -72,6 +76,9 @@ def launch_experiment(
 
     setup_main_tab(tab_main, notebook, tab_train, preset_data=main_preset,
                    set_log_dir_callback=start_training_with_log_dir)
+
+    # setup_main_tab(tab_main, notebook, tab_train, preset_data=main_preset,
+    #                set_log_dir_callback=start_training_with_log_dir)
 
     root.mainloop()
     
