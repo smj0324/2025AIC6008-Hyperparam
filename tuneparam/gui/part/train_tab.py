@@ -71,10 +71,11 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
                 print(f"❌ Init info 파일 로드 오류: {e}")
     
     # 기본 그리드 설정
-    tab_train.columnconfigure(0, weight=1)
-    tab_train.columnconfigure(1, weight=1)
-    tab_train.columnconfigure(2, weight=1)
-    
+    tab_train.columnconfigure(0, weight=1, minsize=150)  # 파라미터 박스: 최소 150px 
+    tab_train.columnconfigure(1, weight=2, minsize=250)  # Loss 박스: 파라미터 박스의 2배 비중
+    tab_train.columnconfigure(2, weight=2, minsize=250)  # Accuracy 박스도 동일
+    tab_train.rowconfigure(3, weight=1, minsize=240)
+
     # 사용자 데이터 가져오기
     username = train_state["user_data"].get("Username", "사용자") if train_state["user_data"] else "사용자"
     model_type = train_state["user_data"].get("Model Type", "Mobilenet") if train_state["user_data"] else "Mobilenet"
@@ -126,12 +127,18 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
     # 그래프 프레임 생성
     home_frame = ttk.LabelFrame(tab_train, text="Training Parameters")
     home_frame.grid(row=3, column=0, sticky="nsew", padx=5, pady=5)
+    home_frame.rowconfigure(0, weight=1)
+    home_frame.columnconfigure(0, weight=1)
     
     loss_frame = ttk.LabelFrame(tab_train, text="Loss Graph")
     loss_frame.grid(row=3, column=1, sticky="nsew", padx=5, pady=5)
+    loss_frame.rowconfigure(0, weight=1)
+    loss_frame.columnconfigure(0, weight=1)
     
     acc_frame = ttk.LabelFrame(tab_train, text="Accuracy Graph")
     acc_frame.grid(row=3, column=2, sticky="nsew", padx=5, pady=5)
+    acc_frame.rowconfigure(0, weight=1)
+    acc_frame.columnconfigure(0, weight=1)
     
     # 파라미터 표시
     param_canvas = tk.Canvas(home_frame, bg=colors['canvas_bg'], highlightthickness=0)
@@ -141,12 +148,12 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
     setup_initial_param_text(train_state, param_canvas)
     
     # Loss 그래프 설정
-    loss_canvas = tk.Canvas(loss_frame, bg=colors['canvas_bg'], highlightthickness=0, width=300, height=200)
+    loss_canvas = tk.Canvas(loss_frame, bg=colors['canvas_bg'], highlightthickness=0, width=290, height=200)
     loss_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     setup_loss_graph(loss_canvas, colors)
     
     # Accuracy 그래프 설정
-    acc_canvas = tk.Canvas(acc_frame, bg=colors['canvas_bg'], highlightthickness=0, width=300, height=200)
+    acc_canvas = tk.Canvas(acc_frame, bg=colors['canvas_bg'], highlightthickness=0, width=290, height=200)
     acc_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     setup_accuracy_graph(acc_canvas, colors)
     
@@ -213,7 +220,7 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
             10, 10, 
             text=text_content, 
             anchor="nw", 
-            font=DEFAULT_FONT,
+            font=(DEFAULT_FONT, 10),
             fill=colors['fg'],
             tags="param_text"
         )
@@ -379,23 +386,31 @@ def setup_loss_graph(canvas, colors):
     canvas.create_text(15, height/2, text="Loss", font=GRAPH_FONT, angle=90, fill=colors['fg'])
     
     # 범례
-    legend_x = width - 60
-    legend_y1 = 20
-    legend_y2 = 40
+    #legend_x = width - 60
+    #legend_y1 = 20
+    #legend_y2 = 40
     
     # Train Loss 범례
-    canvas.create_line(legend_x, legend_y1, legend_x + 15, legend_y1, fill=colors['loss'], width=2)
-    canvas.create_text(legend_x + 20, legend_y1, text="Train Loss", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    #canvas.create_line(legend_x, legend_y1, legend_x + 15, legend_y1, fill=colors['loss'], width=2)
+    #canvas.create_text(legend_x + 20, legend_y1, text="Train Loss", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
     
     # Validation Loss 범례
-    canvas.create_line(legend_x, legend_y2, legend_x + 15, legend_y2, fill=colors['val_loss'], width=2, dash=(4,2))
-    canvas.create_text(legend_x + 20, legend_y2, text="Val Loss", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    #canvas.create_line(legend_x, legend_y2, legend_x + 15, legend_y2, fill=colors['val_loss'], width=2, dash=(4,2))
+    #canvas.create_text(legend_x + 20, legend_y2, text="Val Loss", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
 
 def update_loss_graph(canvas, loss_data, val_loss_data=None):
     """Loss 그래프 업데이트"""
-    width = canvas.winfo_reqwidth()
-    height = canvas.winfo_reqheight()
+    width = canvas.winfo_width() or canvas.winfo_reqwidth()
+    height = canvas.winfo_height() or canvas.winfo_reqheight()
     colors = get_theme_colors(canvas.cget('bg') == '#2b2b2b')
+    
+    left   = 50    # y축 레이블 + 축
+    right  = 20    # 우측 약간 여유
+    top    = 10    # 상단 제목·범례
+    bottom = 40    # x축 레이블 공간
+    
+    plot_w = width  - left - right
+    plot_h = height - top   - bottom
     
     # 기존 요소 삭제
     canvas.delete("loss_line")
@@ -418,22 +433,26 @@ def update_loss_graph(canvas, loss_data, val_loss_data=None):
     for i in range(num_y_labels):
         y_val = min_loss + (max_loss - min_loss) * (num_y_labels - 1 - i) / (num_y_labels - 1)
         y_pos = 10 + i * (height - 35) / (num_y_labels - 1)
-        canvas.create_text(45, y_pos, text=f"{y_val:.3f}", anchor="e", 
+        canvas.create_text(45, y_pos, text=f"{y_val:.2f}", anchor="e", 
                          tags="y_labels", font=GRAPH_FONT, fill=colors['fg'])
     
     # X축 값 표시
     epochs = len(loss_data)
-    num_x_labels = min(epochs, 5)
-    label_width = 40
-    prev_x = 0
-    
-    for i in range(num_x_labels):
-        epoch_num = int(i * (epochs - 1) / (num_x_labels - 1)) if num_x_labels > 1 else 0
-        x_pos = 50 + epoch_num * ((width-60) / (epochs-1 if epochs > 1 else 1))
-        if i == 0 or x_pos - prev_x >= label_width:
-            canvas.create_text(x_pos, height-15, text=str(epoch_num), 
-                             tags="x_labels", font=GRAPH_FONT, fill=colors['fg'])
-            prev_x = x_pos
+    num_ticks = min(6, epochs)
+    for t in range(1, num_ticks+1):
+    # 1~epochs 범위에서 균등 분할 지점 계산
+        idx = int(round(t * epochs / num_ticks)) - 1
+        idx = max(0, min(idx, epochs-1))
+    # 50 과 width-60 사이 plot_w 만큼 비율대로 이동
+        x_pos = 50 + idx * ((width - 60) / (epochs-1 if epochs > 1 else 1))
+    # 1-based label
+        canvas.create_text(
+            x_pos, height - 15,
+            text=str(idx+1),
+            tags="x_labels",
+            font=GRAPH_FONT,
+            fill=colors['fg']
+        )
     
     # 훈련 손실 그리기
     points = []
@@ -445,7 +464,7 @@ def update_loss_graph(canvas, loss_data, val_loss_data=None):
         canvas.create_oval(x-2, y-2, x+2, y+2, fill=colors['loss'], tags="loss_point")
     
     if len(points) >= 4:
-        canvas.create_line(points, fill=colors['loss'], width=2, smooth=1, tags="loss_line")
+        canvas.create_line(points, fill=colors['loss'], width=2, smooth=0, tags="loss_line")
     
     # 검증 손실 그리기
     if val_loss_data and len(val_loss_data) > 0:
@@ -460,6 +479,51 @@ def update_loss_graph(canvas, loss_data, val_loss_data=None):
         if len(val_points) >= 4:
             canvas.create_line(val_points, fill=colors['val_loss'], width=2, smooth=1, 
                              dash=(4, 2), tags="val_loss_line")
+    legend_items = [
+    ("Train Loss", colors['loss'],     ()), 
+    ("Val   Loss", colors['val_loss'], (4,2))
+]
+
+# ─── 여기에 범례 그리기 ───
+    legend_items = [
+        ("Train Loss", colors['loss'],     ()),
+        ("Val   Loss", colors['val_loss'], (4,2))
+    ]
+
+    # 여유(margin) 및 텍스트 폭 계산
+    padding     = 2
+    line_len    = 10
+    text_pad    = 3
+    item_height = 16
+    max_text_chars = max(len(label) for label, _, _ in legend_items)
+    text_width     = max_text_chars * 6
+
+    # 박스 크기/위치 계산 (캔버스 우측 위)
+    canvas_w = canvas.winfo_width() or canvas.winfo_reqwidth()
+    box_w    = padding*2 + line_len + text_pad + text_width
+    box_h    = padding*2 + len(legend_items)*item_height
+    box_x    = canvas_w - box_w - padding
+    box_y    = padding
+
+    # 박스와 항목 그리기
+    canvas.create_rectangle(
+        box_x, box_y, box_x + box_w, box_y + box_h,
+        fill=colors['canvas_bg'], outline=colors['axis'], width=1, tags="legend"
+    )
+    for i, (label, col, dash) in enumerate(legend_items):
+        y = box_y + padding + i*item_height + item_height//2
+        # 컬러라인
+        canvas.create_line(
+            box_x + padding, y,
+            box_x + padding + line_len, y,
+            fill=col, width=2, dash=dash, tags="legend"
+        )
+        # 텍스트
+        canvas.create_text(
+            box_x + padding + line_len + text_pad, y,
+            text=label, anchor="w",
+            font=GRAPH_FONT, fill=colors['fg'], tags="legend"
+        )
 
 def setup_accuracy_graph(canvas, colors):
     """Accuracy 그래프 초기 설정"""
@@ -481,82 +545,114 @@ def setup_accuracy_graph(canvas, colors):
     canvas.create_text(15, height/2, text="Accuracy", font=GRAPH_FONT, angle=90, fill=colors['fg'])
     
     # 범례
-    legend_x = width - 60
-    legend_y1 = 20
-    legend_y2 = 40
+    #legend_x = width - 60
+    #legend_y1 = 20
+    #legend_y2 = 40
     
     # Train Accuracy 범례
-    canvas.create_line(legend_x, legend_y1, legend_x + 15, legend_y1, fill=colors['acc'], width=2)
-    canvas.create_text(legend_x + 20, legend_y1, text="Train Acc", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    #canvas.create_line(legend_x, legend_y1, legend_x + 15, legend_y1, fill=colors['acc'], width=2)
+    #canvas.create_text(legend_x + 20, legend_y1, text="Train Acc", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
     
     # Validation Accuracy 범례
-    canvas.create_line(legend_x, legend_y2, legend_x + 15, legend_y2, fill=colors['val_acc'], width=2, dash=(4,2))
-    canvas.create_text(legend_x + 20, legend_y2, text="Val Acc", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    #canvas.create_line(legend_x, legend_y2, legend_x + 15, legend_y2, fill=colors['val_acc'], width=2, dash=(4,2))
+    #canvas.create_text(legend_x + 20, legend_y2, text="Val Acc", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
 
 def update_accuracy_graph(canvas, acc_data, val_acc_data=None):
     """Accuracy 그래프 업데이트"""
-    width = canvas.winfo_reqwidth()
-    height = canvas.winfo_reqheight()
+    # 1) 캔버스 실제 크기
+    width  = canvas.winfo_width()  or canvas.winfo_reqwidth()
+    height = canvas.winfo_height() or canvas.winfo_reqheight()
     colors = get_theme_colors(canvas.cget('bg') == '#2b2b2b')
-    
-    # 기존 요소 삭제
-    canvas.delete("acc_line")
-    canvas.delete("val_acc_line")
-    canvas.delete("acc_point")
-    canvas.delete("val_acc_point")
-    canvas.delete("y_labels")
-    canvas.delete("x_labels")
-    
+
+    # 2) margin 정의
+    left, right, top, bottom = 50, 20, 10, 40
+    plot_w = width  - left - right
+    plot_h = height - top   - bottom
+
+    # 3) 기존 요소 삭제 (legend 태그 포함)
+    canvas.delete("acc_line","val_acc_line",
+                  "acc_point","val_acc_point",
+                  "x_labels","y_labels","legend")
+
     if not acc_data:
         return
+
     
-    # Y축 값 표시
-    num_y_labels = 5
-    for i in range(num_y_labels):
-        y_val = i / (num_y_labels - 1)
-        y_pos = 10 + (num_y_labels - 1 - i) * (height - 35) / (num_y_labels - 1)
-        canvas.create_text(45, y_pos, text=f"{y_val:.1f}", anchor="e", 
-                         tags="y_labels", font=GRAPH_FONT, fill=colors['fg'])
-    
-    # X축 값 표시
+    # Y축 눈금 숫자
+    num_y = 5
+    for i in range(num_y):
+        y_val = i / (num_y - 1)
+        y = height - bottom - (i / (num_y-1)) * plot_h
+        canvas.create_text(
+            left-5, y,
+            text=f"{y_val:.1f}",
+            anchor="e",
+            tags="y_labels",
+            font=GRAPH_FONT,
+            fill=colors['fg']
+        )
+
+    # 5) Accuracy 곡선 계산
     epochs = len(acc_data)
-    num_x_labels = min(epochs, 5)
-    label_width = 40
-    prev_x = 0
-    
-    for i in range(num_x_labels):
-        epoch_num = int(i * (epochs - 1) / (num_x_labels - 1)) if num_x_labels > 1 else 0
-        x_pos = 50 + epoch_num * ((width-60) / (epochs-1 if epochs > 1 else 1))
-        if i == 0 or x_pos - prev_x >= label_width:
-            canvas.create_text(x_pos, height-15, text=str(epoch_num), 
-                             tags="x_labels", font=GRAPH_FONT, fill=colors['fg'])
-            prev_x = x_pos
-    
-    # 훈련 정확도 그리기
-    points = []
-    for i, acc in enumerate(acc_data):
-        x = 50 + i * ((width-60) / (epochs-1 if epochs > 1 else 1))
-        y = (height-25) - (acc * (height-35))
-        points.append(x)
-        points.append(y)
-        canvas.create_oval(x-2, y-2, x+2, y+2, fill=colors['acc'], tags="acc_point")
-    
-    if len(points) >= 4:
-        canvas.create_line(points, fill=colors['acc'], width=2, smooth=1, tags="acc_line")
-    
-    # 검증 정확도 그리기
-    if val_acc_data and len(val_acc_data) > 0:
-        val_points = []
-        for i, val_acc in enumerate(val_acc_data):
-            x = 50 + i * ((width-60) / (epochs-1 if epochs > 1 else 1))
-            y = (height-25) - (val_acc * (height-35))
-            val_points.append(x)
-            val_points.append(y)
-            canvas.create_oval(x-2, y-2, x+2, y+2, fill=colors['val_acc'], tags="val_acc_point")
-        
-        if len(val_points) >= 4:
-            canvas.create_line(val_points, fill=colors['val_acc'], width=2, smooth=1, 
-                             dash=(4, 2), tags="val_acc_line")
+    # 훈련 정확도
+    pts_acc = []
+    for i, v in enumerate(acc_data):
+        x = left + (i/(epochs-1 if epochs>1 else 1)) * plot_w
+        y = height - bottom - (v * plot_h)
+        pts_acc += [x, y]
+        canvas.create_oval(x-2, y-2, x+2, y+2,
+                           fill=colors['acc'], tags="acc_point")
+    canvas.create_line(pts_acc, fill=colors['acc'], width=2,
+                       smooth=0, tags="acc_line")
+
+    # 검증 정확도
+    if val_acc_data:
+        pts_val = []
+        for i, v in enumerate(val_acc_data):
+            x = left + (i/(epochs-1 if epochs>1 else 1)) * plot_w
+            y = height - bottom - (v * plot_h)
+            pts_val += [x, y]
+            canvas.create_oval(x-2, y-2, x+2, y+2,
+                               fill=colors['val_acc'], tags="val_acc_point")
+        canvas.create_line(pts_val, fill=colors['val_acc'],
+                           width=2, dash=(4,2), smooth=0,
+                           tags="val_acc_line")
+
+    # 6) X축 tick 6개 균등 분할
+    num_ticks = min(6, epochs)
+    for t in range(1, num_ticks+1):
+        idx = int(round(t * epochs / num_ticks)) - 1
+        idx = max(0, min(idx, epochs-1))
+        x = left + (idx/(epochs-1 if epochs>1 else 1)) * plot_w
+        canvas.create_text(x, height-bottom+15,
+                           text=str(idx+1),
+                           tags="x_labels",
+                           font=GRAPH_FONT,
+                           fill=colors['fg'])
+
+    # 7) 범례 그리기 (맨 아래)
+    legend_items = [
+        ("Train Acc", colors['acc'],     ()),
+        ("Val   Acc", colors['val_acc'], (4,2))
+    ]
+    pad, ln_len, txt_pad, ih = 2, 10, 3, 16
+    maxc = max(len(l) for l,_,_ in legend_items)
+    tw   = maxc * 6
+    bw   = pad*2 + ln_len + txt_pad + tw
+    bh   = pad*2 + len(legend_items)*ih
+    bx   = width - bw - pad
+    by   = pad
+    canvas.create_rectangle(bx, by, bx+bw, by+bh,
+                            fill=colors['canvas_bg'],
+                            outline=colors['axis'], tags="legend")
+    for i, (lbl, col, dash) in enumerate(legend_items):
+        yy = by + pad + i*ih + ih//2
+        canvas.create_line(bx+pad, yy, bx+pad+ln_len, yy,
+                           fill=col, width=2, dash=dash, tags="legend")
+        canvas.create_text(bx+pad+ln_len+txt_pad, yy,
+                           text=lbl, anchor="w",
+                           font=GRAPH_FONT, fill=colors['fg'],
+                           tags="legend")
 
 # 메인 코드와 연결하는 부분
 def integrate_with_main(tab_main, notebook, tab_train):
