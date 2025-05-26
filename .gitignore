@@ -26,6 +26,9 @@ data/
 # *.jsonl
 *.tmp
 *.bak
+*.h5
+*.pt
+bge-finetuned/
 
 # IDE and environment files
 .env
