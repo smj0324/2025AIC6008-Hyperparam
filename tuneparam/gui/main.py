@@ -3,7 +3,7 @@ import sys
 import os
 
 from tuneparam.gui.part.log_tab import setup_log_tab
-from tuneparam.gui.part.results import setup_results_tab
+from tuneparam.gui.part.results_tab import setup_results_tab
 import copy
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
@@ -42,7 +42,7 @@ def launch_experiment(
 
     # Train 탭 초기 설정
     train_handlers = setup_train_tab(tab_train)
-    setup_results_tab(tab_results, train_parameters=summary_params)
+    setup_results_tab(tab_results, train_parameters=summary_params, preset_logger =_preset_logger)
 
     # 테마 변경 핸들러
     def handle_theme_change(theme_name):

@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import Callback, EarlyStopping
 from datetime import datetime
 import platform
+import copy
 
 def pretty_print_dict(title, d):
     print(f"\n{'='*30}\n{title}\n{'='*30}")
@@ -46,8 +47,8 @@ class TrainingLogger(Callback):
         self.logs = []
         self.start_time = None
         self.params_info = params if params else {}
-
         self.summary = summary_params
+        self.params_key = copy.deepcopy(list(summary_params.keys()))
 
         if y is not None:
             labels, counts = np.unique(y, return_counts=True)
@@ -151,14 +152,19 @@ class TrainingLogger(Callback):
         })
         print(self.summary)
 
-        log_chunks = {}
-        chunk_size = 10
-        for i in range(0, len(self.logs), chunk_size):
-            chunk_index = i // chunk_size
-            log_chunks[f'logs_{chunk_index}'] = self.logs[i:i + chunk_size]
-        self.summary["logs_by_chunks"] = log_chunks
+        sampled_logs = []
 
-        print(self.summary)
+        for i in range(0, len(self.logs), 10):
+            log = self.logs[i]
+            # 소수점 둘째 자리까지 반올림
+            rounded_log = {
+                k: round(v, 2) if isinstance(v, float) else v
+                for k, v in log.items()
+            }
+            sampled_logs.append(rounded_log)
+
+        self.summary["logs_every_10"] = sampled_logs
+
 
         summary = {
             "hyperparameters": self.params_info,

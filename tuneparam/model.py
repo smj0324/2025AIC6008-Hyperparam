@@ -3,7 +3,6 @@ import os
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 from openai import OpenAI
-from tkinter import messagebox
 from dotenv import load_dotenv
 
 
@@ -13,6 +12,73 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 client = OpenAI(
     api_key=OPENAI_API_KEY,
 )
+
+
+import json
+from typing import Dict, Any, List, Callable
+
+def format_block(keys: List[str], value_fn: Callable[[str], str]) -> str:
+    return "{\n" + ",\n".join([f'  "{k}": {value_fn(k)}' for k in keys]) + "\n}"
+
+def value_template(key: str, current_params: Dict[str, Any]) -> str:
+    return '"value"' if isinstance(current_params[key], str) else "value"
+
+def reason_template(key: str) -> str:
+    return '"reason"'
+
+def create_hparam_prompt(
+    current_params: Dict[str, Any],
+    training_results: Dict[str, Any],
+    dataset_type: str,
+    goal: str,
+    model_prompt: str
+) -> Dict[str, str]:
+    # System prompt
+    system_prompt = (
+        "You are a machine learning hyperparameter optimization expert.\n"
+        "Analyze the given model, dataset, current parameters, and training results "
+        "to recommend optimal hyperparameters.\n"
+        "Provide response in JSON format only, without additional explanation."
+    )
+
+    param_keys = list(current_params.keys())
+
+    # Format recommendations and reasons using top-level helpers
+    recommendations_block = format_block(
+        param_keys, lambda k: value_template(k, current_params)
+    )
+    reasons_block = format_block(
+        param_keys, reason_template
+    )
+
+    # Final user prompt
+    user_prompt = f"""
+Current hyperparameters:
+{json.dumps(current_params, indent=2)}
+
+Training results:
+{json.dumps(training_results, indent=2)}
+
+Dataset type: {dataset_type}
+Optimization goal: {goal}
+
+{model_prompt}
+
+Respond in this JSON format only:
+{{
+  "recommendations": {recommendations_block},
+  "reasons": {reasons_block},
+  "expected_improvement": "description"
+}}
+""".strip()
+
+    return {
+        "system_prompt": system_prompt,
+        "user_prompt": user_prompt
+    }
+
+
+
 
 @dataclass
 class TrainingMetrics:
@@ -103,44 +169,20 @@ class HyperparameterOptimizer:
     def _query_llm(self, current_params: Dict[str, Any], training_results: Dict[str, float],
                    model_prompt: str, dataset_type: str, goal: str) -> Optional[Dict[str, Any]]:
         """Query LLM for hyperparameter recommendations"""
+
+
         if not self.client:
             return None
             
         try:
-            system_prompt = """You are a machine learning hyperparameter optimization expert.
-            Analyze the given model, dataset, current parameters, and training results to recommend optimal hyperparameters.
-            Provide response in JSON format only, without additional explanation."""
-            
-            user_prompt = f"""
-            Current hyperparameters:
-            {json.dumps(current_params, indent=2)}
-            
-            Training results:
-            {json.dumps(training_results, indent=2)}
-            
-            Dataset type: {dataset_type}
-            Optimization goal: {goal}
-            
-            {model_prompt}
-            
-            Respond in this JSON format only:
-            {{
-              "recommendations": {{
-                "learning_rate": value,
-                "batch_size": value,
-                "epochs": value,
-                "optimizer": "value"
-              }},
-              "reasons": {{
-                "learning_rate": "reason",
-                "batch_size": "reason",
-                "epochs": "reason",
-                "optimizer": "reason"
-              }},
-              "expected_improvement": "description"
-            }}
-            """
-            
+            prompt = create_hparam_prompt(current_params, training_results, dataset_type, goal, model_prompt)
+
+            system_prompt = prompt["system_prompt"]
+            user_prompt = prompt["user_prompt"]
+
+            print("system : ", system_prompt)
+            print("user : ", user_prompt)
+
             response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
@@ -150,10 +192,10 @@ class HyperparameterOptimizer:
                 temperature=0.2,
                 max_tokens=1000
             )
-            
+
             content = response.choices[0].message.content
             return json.loads(content.split("```json")[1].split("```")[0] if "```json" in content else content)
-            
+
         except Exception as e:
             print(f"LLM query error: {e}")
             return None
