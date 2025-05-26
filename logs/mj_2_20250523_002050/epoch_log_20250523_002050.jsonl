@@ -1,5 +1,0 @@
-{"epoch": 0, "loss": 0.7307928800582886, "accuracy": 0.5, "val_loss": 0.695038378238678, "val_accuracy": 0.5}
-{"epoch": 1, "loss": 0.7268590927124023, "accuracy": 0.5, "val_loss": 0.6932681798934937, "val_accuracy": 0.5}
-{"epoch": 2, "loss": 0.7221886515617371, "accuracy": 0.5, "val_loss": 0.6921016573905945, "val_accuracy": 0.5}
-{"epoch": 3, "loss": 0.7187377214431763, "accuracy": 0.512499988079071, "val_loss": 0.6910523176193237, "val_accuracy": 0.5}
-{"epoch": 4, "loss": 0.7148679494857788, "accuracy": 0.512499988079071, "val_loss": 0.6902636885643005, "val_accuracy": 0.44999998807907104}
