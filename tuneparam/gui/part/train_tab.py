@@ -178,6 +178,7 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
     def update_param_text(train_state, param_canvas, data=None):
         """파라미터 텍스트 업데이트"""
         text_content = "Training Configuration:\n\n"
+        colors = train_state["colors"]
         
         if data:
             # 학습 관련 파라미터만 필터링
@@ -213,7 +214,7 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
             text=text_content, 
             anchor="nw", 
             font=DEFAULT_FONT,
-            fill=train_state["colors"]['fg'],
+            fill=colors['fg'],
             tags="param_text"
         )
     
@@ -299,6 +300,9 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
                                 text=f"Accuracy: {acc:.4f} (검증: {val_acc:.4f})"
                             ))
                             
+                            # 파라미터 텍스트 업데이트 추가
+                            tab_train.after(0, lambda: update_param_text(train_state, param_canvas))
+                            
                             # 그래프 업데이트용 데이터 준비
                             all_loss = [epoch.get('loss', 0) for epoch in epochs_data]
                             all_acc = [epoch.get('accuracy', epoch.get('acc', 0)) 
@@ -361,13 +365,13 @@ def setup_loss_graph(canvas, colors):
     height = canvas.winfo_reqheight()
     
     # 배경 그리드
-    for i in range(50, width-10, 30):  # X축 시작점을 50으로 변경
+    for i in range(50, width-70, 30):  # 오른쪽 여백 증가
         canvas.create_line(i, 10, i, height-25, fill=colors['grid'], width=1)
     for i in range(height-25, 10, -30):
-        canvas.create_line(50, i, width-10, i, fill=colors['grid'], width=1)
+        canvas.create_line(50, i, width-70, i, fill=colors['grid'], width=1)
     
     # X축, Y축 그리기
-    canvas.create_line(50, height-25, width-10, height-25, width=2, fill=colors['axis'])
+    canvas.create_line(50, height-25, width-70, height-25, width=2, fill=colors['axis'])
     canvas.create_line(50, 10, 50, height-25, width=2, fill=colors['axis'])
     
     # 축 레이블
@@ -375,14 +379,17 @@ def setup_loss_graph(canvas, colors):
     canvas.create_text(15, height/2, text="Loss", font=GRAPH_FONT, angle=90, fill=colors['fg'])
     
     # 범례
-    legend_x = width - 70
+    legend_x = width - 60
     legend_y1 = 20
-    legend_y2 = 35
+    legend_y2 = 40
     
+    # Train Loss 범례
     canvas.create_line(legend_x, legend_y1, legend_x + 15, legend_y1, fill=colors['loss'], width=2)
-    canvas.create_text(legend_x + 35, legend_y1, text="Train", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    canvas.create_text(legend_x + 20, legend_y1, text="Train Loss", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    
+    # Validation Loss 범례
     canvas.create_line(legend_x, legend_y2, legend_x + 15, legend_y2, fill=colors['val_loss'], width=2, dash=(4,2))
-    canvas.create_text(legend_x + 35, legend_y2, text="Val", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    canvas.create_text(legend_x + 20, legend_y2, text="Val Loss", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
 
 def update_loss_graph(canvas, loss_data, val_loss_data=None):
     """Loss 그래프 업데이트"""
@@ -460,13 +467,13 @@ def setup_accuracy_graph(canvas, colors):
     height = canvas.winfo_reqheight()
     
     # 배경 그리드
-    for i in range(50, width-10, 30):  # X축 시작점을 50으로 변경
+    for i in range(50, width-70, 30):  # 오른쪽 여백 증가
         canvas.create_line(i, 10, i, height-25, fill=colors['grid'], width=1)
     for i in range(height-25, 10, -30):
-        canvas.create_line(50, i, width-10, i, fill=colors['grid'], width=1)
+        canvas.create_line(50, i, width-70, i, fill=colors['grid'], width=1)
     
     # X축, Y축 그리기
-    canvas.create_line(50, height-25, width-10, height-25, width=2, fill=colors['axis'])
+    canvas.create_line(50, height-25, width-70, height-25, width=2, fill=colors['axis'])
     canvas.create_line(50, 10, 50, height-25, width=2, fill=colors['axis'])
     
     # 축 레이블
@@ -474,14 +481,17 @@ def setup_accuracy_graph(canvas, colors):
     canvas.create_text(15, height/2, text="Accuracy", font=GRAPH_FONT, angle=90, fill=colors['fg'])
     
     # 범례
-    legend_x = width - 70
+    legend_x = width - 60
     legend_y1 = 20
-    legend_y2 = 35
+    legend_y2 = 40
     
+    # Train Accuracy 범례
     canvas.create_line(legend_x, legend_y1, legend_x + 15, legend_y1, fill=colors['acc'], width=2)
-    canvas.create_text(legend_x + 35, legend_y1, text="Train", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    canvas.create_text(legend_x + 20, legend_y1, text="Train Acc", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    
+    # Validation Accuracy 범례
     canvas.create_line(legend_x, legend_y2, legend_x + 15, legend_y2, fill=colors['val_acc'], width=2, dash=(4,2))
-    canvas.create_text(legend_x + 35, legend_y2, text="Val", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
+    canvas.create_text(legend_x + 20, legend_y2, text="Val Acc", anchor="w", font=GRAPH_FONT, fill=colors['fg'])
 
 def update_accuracy_graph(canvas, acc_data, val_acc_data=None):
     """Accuracy 그래프 업데이트"""
@@ -574,6 +584,7 @@ def setup_initial_param_text(train_state, param_canvas):
     """초기 파라미터 텍스트 설정"""
     text_content = "Training Configuration:\n\n"
     params_info = train_state.get("params_info", {})
+    colors = train_state["colors"]
     
     # 학습 관련 파라미터만 표시
     if params_info:
@@ -599,6 +610,6 @@ def setup_initial_param_text(train_state, param_canvas):
         text=text_content, 
         anchor="nw", 
         font=DEFAULT_FONT,
-        fill=train_state["colors"]['fg'],
+        fill=colors['fg'],
         tags="param_text"
     )
