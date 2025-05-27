@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import Callback, EarlyStopping
 from datetime import datetime
 import platform
+import copy
 
 def pretty_print_dict(title, d):
     print(f"\n{'='*30}\n{title}\n{'='*30}")
@@ -36,7 +37,7 @@ def convert_json_serializable_key(key):
 
 
 class TrainingLogger(Callback):
-    def __init__(self, log_dir="logs", params=None, X=None, y=None):
+    def __init__(self, log_dir="logs", params=None, summary_params = None, X=None, y=None):
         super().__init__()
         self.log_dir = log_dir
         os.makedirs(self.log_dir, exist_ok=True)
@@ -46,6 +47,8 @@ class TrainingLogger(Callback):
         self.logs = []
         self.start_time = None
         self.params_info = params if params else {}
+        self.summary = summary_params
+        self.params_key = copy.deepcopy(list(summary_params.keys()))
 
         if y is not None:
             labels, counts = np.unique(y, return_counts=True)
@@ -141,6 +144,27 @@ class TrainingLogger(Callback):
         for cb in getattr(self.model, 'callbacks', []):
             if isinstance(cb, EarlyStopping):
                 early_stopping_epoch = cb.stopped_epoch
+        print(self.summary)
+        self.summary.update({
+            "best_epoch": best_epoch,
+            "best_accuracy": max((l.get("val_accuracy", l.get("accuracy", 0)) for l in self.logs), default=None),
+            "train_end_time": end_time.isoformat(),
+        })
+        print(self.summary)
+
+        sampled_logs = []
+
+        for i in range(0, len(self.logs), 10):
+            log = self.logs[i]
+            # 소수점 둘째 자리까지 반올림
+            rounded_log = {
+                k: round(v, 2) if isinstance(v, float) else v
+                for k, v in log.items()
+            }
+            sampled_logs.append(rounded_log)
+
+        self.summary["logs_every_10"] = sampled_logs
+
 
         summary = {
             "hyperparameters": self.params_info,

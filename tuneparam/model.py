@@ -5,34 +5,35 @@ from typing import Dict, Any, Optional
 from openai import OpenAI
 from tkinter import messagebox
 from dotenv import load_dotenv
-from rag.search_faiss import faiss_search
+from tuneparam.rag.search_faiss import faiss_search
 
 load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+
 class HyperparameterOptimizer:
     """Hyperparameter optimization using LLM or default strategies"""
-    
+
     def __init__(self):
         self.client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
-    
-    def recommend_params(self, 
-                        current_params: Dict[str, Any], 
-                        training_results: Dict[str, float],
-                        model_name: str, 
-                        dataset_type: str, 
-                        goal: str = "Accuracy",
-                        rag_evidence: str = "") -> Dict[str, Any]:
+
+    def recommend_params(self,
+                         current_params: Dict[str, Any],
+                         training_results: Dict[str, float],
+                         model_name: str,
+                         dataset_type: str,
+                         goal: str = "Accuracy",
+                         rag_evidence: str = "") -> Dict[str, Any]:
         """
         Recommend hyperparameters based on current training results
-        
+
         Args:
             current_params: Current hyperparameters
             training_results: Current training metrics
             model_name: Name of the model (MobilenetV4, LSTM, Resnet)
             dataset_type: Type of dataset (Image, Text, Tabular)
             goal: Optimization goal (Accuracy, Speed, Memory)
-            
+
         Returns:
             Dictionary containing recommendations and explanations
         """
@@ -45,7 +46,7 @@ class HyperparameterOptimizer:
             print("*" * 80, "\n", response, "\n", "*" * 80)
             if response:
                 return response
-            
+
     def _get_model_specific_params(self, model_name: str):
         model_parameter = {
             "ResNet": {
@@ -154,8 +155,9 @@ class HyperparameterOptimizer:
         }
         target_parmas = model_parameter.get(model_name)
         return target_parmas
-            
-    def _get_model_specific_prompt(self, model_name: str, current_params: dict, dataset_type: str, goal: str, rag_evidence: str = "") -> str:
+
+    def _get_model_specific_prompt(self, model_name: str, current_params: dict, dataset_type: str, goal: str,
+                                   rag_evidence: str = "") -> str:
         """Generate model-specific prompt for LLM, with optional RAG evidence"""
         base_prompts = {
             "MobilenetV4": f"""
@@ -165,7 +167,7 @@ class HyperparameterOptimizer:
                 2. Learning rate's impact on convergence and accuracy
                 3. Optimization goal: {goal}
                 """,
-                        "LSTM": f"""
+            "LSTM": f"""
                 LSTM model optimization for {dataset_type} dataset.
                 Key considerations:
                 1. Sequence length and batch size impact on memory
@@ -173,7 +175,7 @@ class HyperparameterOptimizer:
                 3. Optimizer selection (especially Adam vs RMSprop)
                 4. Optimization goal: {goal}
                 """,
-                        "Resnet": f"""
+            "Resnet": f"""
                 ResNet model optimization for {dataset_type} dataset.
                 Key considerations:
                 1. Batch normalization and learning rate scheduling
@@ -183,7 +185,7 @@ class HyperparameterOptimizer:
                 """
         }
         base_prompt = base_prompts.get(
-            model_name, 
+            model_name,
             f"Optimize {model_name} model for {dataset_type} dataset with goal: {goal}"
         )
 
@@ -197,28 +199,28 @@ class HyperparameterOptimizer:
         """Query LLM for hyperparameter recommendations"""
         if not self.client:
             return None
-            
+
         try:
             system_prompt = """You are a machine learning hyperparameter optimization expert.
             Analyze the given model, dataset, current parameters, and training results to recommend optimal hyperparameters.
             Provide response in JSON format only, without additional explanation."""
-            
+
             user_prompt = f"""
             Current hyperparameters:
             {json.dumps(current_params, indent=2)}
-            
+
             Training results:
             {json.dumps(training_results, indent=2)}
-            
+
             Dataset type: {dataset_type}
             Optimization goal: {goal}
-            
+
             {model_prompt}
 
             Respond in this JSON format only:
             {model_parmas}
             """
-            
+
             response = self.client.chat.completions.create(
                 model="gpt-4.1-mini",
                 messages=[
@@ -228,15 +230,15 @@ class HyperparameterOptimizer:
                 temperature=0.2,
                 max_tokens=1000
             )
-            
+
             content = response.choices[0].message.content
-            print(user_prompt, content)
             return json.loads(content.split("```json")[1].split("```")[0] if "```json" in content else content)
-            
+
         except Exception as e:
             print(f"LLM query error: {e}")
             return None
-        
+
+
 ###################################################################################################################################
 
 # Usage example
@@ -248,22 +250,22 @@ if __name__ == "__main__":
         "epochs": 10,
         "optimizer": "Adam"
     }
-    
+
     training_results = {
         "accuracy": 0.85,
         "val_accuracy": 0.82,
         "loss": 0.32,
         "val_loss": 0.40
     }
-    
+
     optimizer = HyperparameterOptimizer()
     recommendations = optimizer.recommend_params(
         current_params=current_hyperparams,
         training_results=training_results,
-        model_name="MobileNetV4",
+        model_name="ResNet",
         dataset_type="Image",
         goal="Accuracy"
     )
-    
+
     print("Recommended hyperparameters:")
     print(json.dumps(recommendations, indent=2, ensure_ascii=False))
