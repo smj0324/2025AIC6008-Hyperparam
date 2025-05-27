@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional
 from openai import OpenAI
 from tkinter import messagebox
 from dotenv import load_dotenv
-from rag.search_faiss import faiss_search
+from tuneparam.rag.search_faiss import faiss_search
 
 load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
