@@ -11,7 +11,9 @@ from gui.part.results_tab import setup_results_tab
 from gui.part.utils import root, style, THEME_BG, set_theme, create_notebook_with_tabs, create_theme_buttons
 from gui.part.main_tap import setup_main_tab
 from gui.part.train_tab import setup_train_tab
-from tuneparam.framework.keras_ import TrainingLogger
+from framework.keras_ import TrainingLogger
+from database.service.dao import model_crud
+from database.db import SessionLocal
 
 def launch_experiment(
     model,
@@ -56,6 +58,20 @@ def launch_experiment(
     # ===== TrainingLogger/fit 갱신 함수 =====
     def start_training_with_log_dir(new_log_dir, user_info):
         logger = TrainingLogger(log_dir=new_log_dir, params=params, X=X_train, y=y_train, summary_params=summary_params)
+
+        model_db_data = {
+            "model_size": user_info['Model Size'],
+            "dataset_size": user_info['Dataset Size'],
+            "model_type": user_info['Model Type'],
+            "dataset_type": user_info['Dataset Type'],
+            "goal": user_info['Goal'],
+            "total_epoch": None,
+            'version' : user_info['Version'],
+        }
+        db = SessionLocal()
+        model_db = model_crud.create_model_for_user(db=db, username=None, model_data=model_db_data)
+        db.close()
+        logger.model_db = model_db
         
         # Train 탭 업데이트
         train_handlers["start_monitoring"](new_log_dir, user_info)

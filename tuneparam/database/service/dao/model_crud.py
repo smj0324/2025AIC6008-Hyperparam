@@ -2,18 +2,20 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
-
 from tuneparam.database.schema import Model, User
 
 
 # CREATE - 특정 유저에게 모델 추가
-def create_model_for_user(db: Session, username: str, model_data: dict) -> Optional[Model]:
+def create_model_for_user(db: Session, username: str, model_data: dict) -> Model:
     user = db.query(User).filter(User.username == username).first()
-    if not user:
-        return None
 
     new_model = Model(**model_data)
-    new_model.user = user  # 외래키 연결
+
+    if user:
+        new_model.user = user  # 외래키 연결
+    else:
+        new_model.user_id = None  # 명시적으로 None 설정 (nullable=True이기 때문)
+
     db.add(new_model)
     db.commit()
     db.refresh(new_model)
@@ -21,11 +23,11 @@ def create_model_for_user(db: Session, username: str, model_data: dict) -> Optio
 
 
 # READ - 특정 유저의 모든 모델 조회
-def get_models_by_username(db: Session, username: str) -> List[Model]:
-    user = db.query(User).filter(User.username == username).first()
-    if not user:
-        return []
-    return user.models
+def get_model_by_version_and_type(db: Session, version: str, model_type: str) -> Optional[Model]:
+    return db.query(Model).filter(
+        Model.version == version,
+        Model.model_type == model_type
+    ).first()
 
 
 # UPDATE - 모델 정보 수정 (복합키 기반)

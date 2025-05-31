@@ -5,7 +5,6 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 
 TEST_USER = {
     "username": "alice",
-    "version": "1.0",
     "hardware": "A100"
 }
 TEST_MODEL = {
@@ -14,6 +13,7 @@ TEST_MODEL = {
     "model_type": "Resnet",
     "dataset_type": "Image",
     "goal": "Accuracy",
+    "version": "2.0",
 "total_epoch" : 100
 }
 
@@ -23,6 +23,7 @@ TEST_MODEL2 = {
     "model_type": "Resnet",
     "dataset_type": "Image",
     "goal": "Accuracy",
+    "version": "1.0",
     "total_epoch" : 200
 }
 
