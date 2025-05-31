@@ -7,19 +7,23 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from tuneparam.database.db import Base
 
+from sqlalchemy import UniqueConstraint
+
 class Model(Base):
     __tablename__ = "models"
 
     id = Column(Integer, primary_key=True, autoincrement=True, name="id")
-    model_size = Column(String, nullable=False, name="model_size")
-    model_type = Column(String, nullable=False, name="model_type")
-    dataset_size = Column(String, name="dataset_size")
-    dataset_type = Column(String, name="dataset_type")
-    goal = Column(String, name="goal")
-    total_epoch = Column(Integer, default=0, nullable=False, name="total_epoch")  # 이 부분 추가
+    model_size = Column(String, nullable=True, name="model_size")
+    model_type = Column(String, nullable=True, name="model_type")  # 모델 이름이라고 가정
+    dataset_size = Column(String, nullable=True, name="dataset_size")
+    dataset_type = Column(String, nullable=True, name="dataset_type")
+    goal = Column(String, nullable=True, name="goal")
+    total_epoch = Column(Integer, default=0, nullable=True, name="total_epoch")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), name="created_at")
+    version = Column(String, nullable=False, name="version")
+    init_info_path = Column(String, nullable=True, name="init_info_path")
 
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, name="user_id")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, name="user_id")
     user = relationship("User", back_populates="models", lazy="selectin")
 
     training_logs = relationship(
@@ -30,5 +34,5 @@ class Model(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("user_id", "model_size", "model_type", name="uq_user_modelsize_type"),
+        UniqueConstraint("version", "model_type", name="uq_version_modeltype"),
     )
