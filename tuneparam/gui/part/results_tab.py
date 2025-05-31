@@ -3,7 +3,7 @@ from tuneparam.framework.keras_ import TrainingLogger
 from tkinter import ttk
 from operator import itemgetter
 import json
-
+from tkinter import scrolledtext
 from tuneparam.model import HyperparameterOptimizer
 
 GRAPH_FONT = ('Helvetica', 8)
@@ -94,17 +94,18 @@ def apply_gpt_params(tab_train, logger: TrainingLogger):
     included, excluded = split_summary_by_keys(logger.summary, logger.params_key)
     print(included)
     print(excluded)
+    print(logger.user_data)
+
     optimizer = HyperparameterOptimizer()
 
     recommendations = optimizer.recommend_params(
         current_params=included,
         training_results=excluded,
-        model_name="MobilenetV4",
-        dataset_type="Image",
-        goal="Accuracy"
+        model_name=logger.user_data['Model Type'],
+        dataset_type=logger.user_data['Dataset Type'],
+        goal=logger.user_data['Goal']
     )
-    print("Recommended hyperparameters:")
-    print(json.dumps(recommendations, indent=2, ensure_ascii=False))
+    return recommendations
 
     # try:
     #     tab_train.lr_entry.delete(0, tk.END)
@@ -126,37 +127,49 @@ def on_retrain_with_params(train_parameters):
 
 
 def show_gpt_params(tab_train, logger: TrainingLogger):
-    # 요기서
-    original_params = logger.summary
 
-    print(original_params)
+    gpt_output = apply_gpt_params(tab_train, logger)
 
-    # 기존에 있던 gpt_frame 삭제 (중복 방지)
+    # 기존 GPT 프레임 제거
     for child in tab_train.winfo_children():
         if getattr(child, "is_gpt_frame", False):
             child.destroy()
+    recommendations = gpt_output["recommendations"]
+    reasons = gpt_output["reasons"]
+    expected_improvement = gpt_output.get("expected_improvement", "")
 
+    # 프레임 생성
     gpt_frame = ttk.LabelFrame(tab_train, text="📌 LLM 추천 하이퍼파라미터")
     gpt_frame.is_gpt_frame = True
     gpt_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-    for key, value in original_params.items():
+    # 추천 파라미터 및 이유 출력
+    for key in recommendations:
         row = ttk.Frame(gpt_frame)
-        row.pack(anchor="w", padx=10, pady=2)
+        row.pack(anchor="w", fill="x", padx=10, pady=4)
 
+        # Key 및 값
         key_label = ttk.Label(row, text=f"{key}:", width=18)
         key_label.pack(side="left")
 
-        value_label = ttk.Label(row, text=str(value))
+        value_label = ttk.Label(row, text=str(recommendations[key]), foreground="blue")
         value_label.pack(side="left")
 
-    apply_button = ttk.Button(
-        gpt_frame,
-        text="추천값 적용하기",
-        command=lambda: apply_gpt_params(tab_train, logger)
-    )
-    apply_button.pack(pady=15)
+        # 이유 Tooltip 스타일
+        reason_text = reasons.get(key, "")
+        if reason_text:
+            reason_box = ttk.Label(row, text=reason_text, wraplength=380, foreground="gray", font=("Helvetica", 8))
+            reason_box.pack(side="left", padx=6)
 
+    # 예상 향상 표시
+    improvement_frame = ttk.Frame(gpt_frame)
+    improvement_frame.pack(fill="x", padx=10, pady=(10, 5))
+    ttk.Label(improvement_frame, text="📈 Expected Improvement:", font=("Helvetica", 9, "bold")).pack(anchor="w")
+
+    improvement_box = scrolledtext.ScrolledText(improvement_frame, height=3, wrap="word", font=("Helvetica", 9))
+    improvement_box.insert("1.0", expected_improvement)
+    improvement_box.configure(state="disabled")
+    improvement_box.pack(fill="x", expand=True, pady=2)
 
 def setup_results_tab(tab_train,  train_parameters=None, preset_logger : TrainingLogger = None):
 
