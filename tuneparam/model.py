@@ -501,11 +501,8 @@ class HyperparameterOptimizer:
                 max_tokens=1500
             )
             content = response.choices[0].message.content.strip()
-            if "
-json" in content:
-                body = content.split("
-json")[1].split("
-")[0].strip()
+            if "json" in content:
+                body = content.split("json")[1].split("```")[0].strip()")[0].strip()
             else:
                 body = content
             return json.loads(body)
