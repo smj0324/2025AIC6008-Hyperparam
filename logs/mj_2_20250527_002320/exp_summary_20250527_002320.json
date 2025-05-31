@@ -1,0 +1,214 @@
+{
+  "hyperparameters": {
+    "epochs": 20,
+    "batch_size": 16,
+    "validation_split": 0.2,
+    "shuffle": true,
+    "verbose": 1,
+    "initial_epoch": 0,
+    "validation_freq": 1,
+    "max_queue_size": 10,
+    "workers": 1,
+    "use_multiprocessing": false,
+    "model_config": "{\"class_name\": \"Sequential\", \"config\": {\"name\": \"sequential\", \"layers\": [{\"module\": \"keras.layers\", \"class_name\": \"InputLayer\", \"config\": {\"batch_input_shape\": [null, 8], \"dtype\": \"float32\", \"sparse\": false, \"ragged\": false, \"name\": \"dense_input\"}, \"registered_name\": null}, {\"module\": \"keras.layers\", \"class_name\": \"Dense\", \"config\": {\"name\": \"dense\", \"trainable\": true, \"dtype\": \"float32\", \"batch_input_shape\": [null, 8], \"units\": 16, \"activation\": \"relu\", \"use_bias\": true, \"kernel_initializer\": {\"module\": \"keras.initializers\", \"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}, \"registered_name\": null}, \"bias_initializer\": {\"module\": \"keras.initializers\", \"class_name\": \"Zeros\", \"config\": {}, \"registered_name\": null}, \"kernel_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"bias_constraint\": null}, \"registered_name\": null, \"build_config\": {\"input_shape\": [null, 8]}}, {\"module\": \"keras.layers\", \"class_name\": \"Dense\", \"config\": {\"name\": \"dense_1\", \"trainable\": true, \"dtype\": \"float32\", \"units\": 1, \"activation\": \"sigmoid\", \"use_bias\": true, \"kernel_initializer\": {\"module\": \"keras.initializers\", \"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}, \"registered_name\": null}, \"bias_initializer\": {\"module\": \"keras.initializers\", \"class_name\": \"Zeros\", \"config\": {}, \"registered_name\": null}, \"kernel_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"bias_constraint\": null}, \"registered_name\": null, \"build_config\": {\"input_shape\": [null, 16]}}]}, \"keras_version\": \"2.15.0\", \"backend\": \"tensorflow\"}",
+    "model_summary": "Model: \"sequential\"\n_________________________________________________________________\n Layer (type)                Output Shape              Param #   \n=================================================================\n dense (Dense)               (None, 16)                144       \n                                                                 \n dense_1 (Dense)             (None, 1)                 17        \n                                                                 \n=================================================================\nTotal params: 161 (644.00 Byte)\nTrainable params: 161 (644.00 Byte)\nNon-trainable params: 0 (0.00 Byte)\n_________________________________________________________________",
+    "weights_path": "logs\\mj_2_20250527_002320\\final_weights.h5",
+    "optimizer": "<keras.src.optimizers.adam.Adam object at 0x0000014E11BB6160>",
+    "optimizer_config": {
+      "name": "Adam",
+      "weight_decay": null,
+      "clipnorm": null,
+      "global_clipnorm": null,
+      "clipvalue": null,
+      "use_ema": false,
+      "ema_momentum": 0.99,
+      "ema_overwrite_frequency": null,
+      "jit_compile": false,
+      "is_legacy_optimizer": false,
+      "learning_rate": 0.0010000000474974513,
+      "beta_1": 0.9,
+      "beta_2": 0.999,
+      "epsilon": 1e-07,
+      "amsgrad": false
+    },
+    "loss": "binary_crossentropy",
+    "metrics": [],
+    "random_seed": 3150378888,
+    "np_seed": 3129709209,
+    "tf_seed": [
+      null,
+      null
+    ],
+    "tf_version": "2.15.0",
+    "python_version": "3.9.21",
+    "platform": "Windows-10-10.0.26100-SP0",
+    "hardware": {
+      "cpu": "Intel64 Family 6 Model 186 Stepping 3, GenuineIntel",
+      "gpu": []
+    },
+    "start_time": "2025-05-27T00:23:20.660080"
+  },
+  "data_info": {
+    "X_shape": [
+      100,
+      8
+    ],
+    "y_shape": [
+      100
+    ],
+    "X_dtype": "float64",
+    "y_dtype": "int32",
+    "y_class_dist": {
+      "0": 43,
+      "1": 57
+    }
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "loss": 0.7790089845657349,
+      "accuracy": 0.3375000059604645,
+      "val_loss": 0.7184864282608032,
+      "val_accuracy": 0.44999998807907104
+    },
+    {
+      "epoch": 1,
+      "loss": 0.7710678577423096,
+      "accuracy": 0.32499998807907104,
+      "val_loss": 0.7095878720283508,
+      "val_accuracy": 0.4000000059604645
+    },
+    {
+      "epoch": 2,
+      "loss": 0.7647681832313538,
+      "accuracy": 0.3499999940395355,
+      "val_loss": 0.7005704641342163,
+      "val_accuracy": 0.4000000059604645
+    },
+    {
+      "epoch": 3,
+      "loss": 0.759238064289093,
+      "accuracy": 0.36250001192092896,
+      "val_loss": 0.6924713850021362,
+      "val_accuracy": 0.4000000059604645
+    },
+    {
+      "epoch": 4,
+      "loss": 0.7523811459541321,
+      "accuracy": 0.375,
+      "val_loss": 0.6870845556259155,
+      "val_accuracy": 0.4000000059604645
+    },
+    {
+      "epoch": 5,
+      "loss": 0.7471884489059448,
+      "accuracy": 0.38749998807907104,
+      "val_loss": 0.6819325685501099,
+      "val_accuracy": 0.4000000059604645
+    },
+    {
+      "epoch": 6,
+      "loss": 0.7426996827125549,
+      "accuracy": 0.38749998807907104,
+      "val_loss": 0.6779752969741821,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 7,
+      "loss": 0.7406753301620483,
+      "accuracy": 0.375,
+      "val_loss": 0.6734238862991333,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 8,
+      "loss": 0.7364714741706848,
+      "accuracy": 0.38749998807907104,
+      "val_loss": 0.670577883720398,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 9,
+      "loss": 0.7331833243370056,
+      "accuracy": 0.4000000059604645,
+      "val_loss": 0.6680532693862915,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 10,
+      "loss": 0.7301180362701416,
+      "accuracy": 0.38749998807907104,
+      "val_loss": 0.6664495468139648,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 11,
+      "loss": 0.727968692779541,
+      "accuracy": 0.38749998807907104,
+      "val_loss": 0.6645513772964478,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 12,
+      "loss": 0.7251294255256653,
+      "accuracy": 0.375,
+      "val_loss": 0.6629928350448608,
+      "val_accuracy": 0.6000000238418579
+    },
+    {
+      "epoch": 13,
+      "loss": 0.7217329740524292,
+      "accuracy": 0.4000000059604645,
+      "val_loss": 0.6625570058822632,
+      "val_accuracy": 0.6000000238418579
+    },
+    {
+      "epoch": 14,
+      "loss": 0.7189903855323792,
+      "accuracy": 0.4000000059604645,
+      "val_loss": 0.6622217893600464,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 15,
+      "loss": 0.7168777585029602,
+      "accuracy": 0.38749998807907104,
+      "val_loss": 0.6613930463790894,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 16,
+      "loss": 0.7144273519515991,
+      "accuracy": 0.4124999940395355,
+      "val_loss": 0.6604810953140259,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 17,
+      "loss": 0.7122224569320679,
+      "accuracy": 0.4124999940395355,
+      "val_loss": 0.6599931716918945,
+      "val_accuracy": 0.550000011920929
+    },
+    {
+      "epoch": 18,
+      "loss": 0.7103538513183594,
+      "accuracy": 0.42500001192092896,
+      "val_loss": 0.6592246890068054,
+      "val_accuracy": 0.6000000238418579
+    },
+    {
+      "epoch": 19,
+      "loss": 0.7088322639465332,
+      "accuracy": 0.4625000059604645,
+      "val_loss": 0.6583589911460876,
+      "val_accuracy": 0.6000000238418579
+    }
+  ],
+  "best_epoch": 12,
+  "best_accuracy": 0.6000000238418579,
+  "train_end_time": "2025-05-27T00:23:23.847712",
+  "total_train_seconds": 3.187632,
+  "early_stopping_epoch": null,
+  "epoch_log_file": "logs\\mj_2_20250527_002320\\epoch_log_20250527_002320.jsonl"
+}

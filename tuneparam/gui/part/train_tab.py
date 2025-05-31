@@ -5,7 +5,7 @@ import json
 import glob
 import threading
 import time
-from tuneparam.gui.theme.fonts import DEFAULT_FONT, ERROR_FONT_SMALL
+from tuneparam.gui.theme.fonts import DEFAULT_FONT,DEFAULT_FONT_2, ERROR_FONT_SMALL
 
 # 그래프용 작은 폰트 정의
 GRAPH_FONT = ('Helvetica', 8)
@@ -220,7 +220,7 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
             10, 10, 
             text=text_content, 
             anchor="nw", 
-            font=(DEFAULT_FONT, 10),
+            font=(DEFAULT_FONT_2),
             fill=colors['fg'],
             tags="param_text"
         )
@@ -624,7 +624,7 @@ def update_accuracy_graph(canvas, acc_data, val_acc_data=None):
         idx = int(round(t * epochs / num_ticks)) - 1
         idx = max(0, min(idx, epochs-1))
         x = left + (idx/(epochs-1 if epochs>1 else 1)) * plot_w
-        canvas.create_text(x, height-bottom+15,
+        canvas.create_text(x, height-15,
                            text=str(idx+1),
                            tags="x_labels",
                            font=GRAPH_FONT,

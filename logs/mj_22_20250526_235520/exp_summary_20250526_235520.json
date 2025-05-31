@@ -1,0 +1,214 @@
+{
+  "hyperparameters": {
+    "epochs": 20,
+    "batch_size": 16,
+    "validation_split": 0.2,
+    "shuffle": true,
+    "verbose": 1,
+    "initial_epoch": 0,
+    "validation_freq": 1,
+    "max_queue_size": 10,
+    "workers": 1,
+    "use_multiprocessing": false,
+    "model_config": "{\"class_name\": \"Sequential\", \"config\": {\"name\": \"sequential\", \"layers\": [{\"module\": \"keras.layers\", \"class_name\": \"InputLayer\", \"config\": {\"batch_input_shape\": [null, 8], \"dtype\": \"float32\", \"sparse\": false, \"ragged\": false, \"name\": \"dense_input\"}, \"registered_name\": null}, {\"module\": \"keras.layers\", \"class_name\": \"Dense\", \"config\": {\"name\": \"dense\", \"trainable\": true, \"dtype\": \"float32\", \"batch_input_shape\": [null, 8], \"units\": 16, \"activation\": \"relu\", \"use_bias\": true, \"kernel_initializer\": {\"module\": \"keras.initializers\", \"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}, \"registered_name\": null}, \"bias_initializer\": {\"module\": \"keras.initializers\", \"class_name\": \"Zeros\", \"config\": {}, \"registered_name\": null}, \"kernel_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"bias_constraint\": null}, \"registered_name\": null, \"build_config\": {\"input_shape\": [null, 8]}}, {\"module\": \"keras.layers\", \"class_name\": \"Dense\", \"config\": {\"name\": \"dense_1\", \"trainable\": true, \"dtype\": \"float32\", \"units\": 1, \"activation\": \"sigmoid\", \"use_bias\": true, \"kernel_initializer\": {\"module\": \"keras.initializers\", \"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}, \"registered_name\": null}, \"bias_initializer\": {\"module\": \"keras.initializers\", \"class_name\": \"Zeros\", \"config\": {}, \"registered_name\": null}, \"kernel_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"bias_constraint\": null}, \"registered_name\": null, \"build_config\": {\"input_shape\": [null, 16]}}]}, \"keras_version\": \"2.15.0\", \"backend\": \"tensorflow\"}",
+    "model_summary": "Model: \"sequential\"\n_________________________________________________________________\n Layer (type)                Output Shape              Param #   \n=================================================================\n dense (Dense)               (None, 16)                144       \n                                                                 \n dense_1 (Dense)             (None, 1)                 17        \n                                                                 \n=================================================================\nTotal params: 161 (644.00 Byte)\nTrainable params: 161 (644.00 Byte)\nNon-trainable params: 0 (0.00 Byte)\n_________________________________________________________________",
+    "weights_path": "logs\\mj_22_20250526_235520\\final_weights.h5",
+    "optimizer": "<keras.src.optimizers.adam.Adam object at 0x000002330C407130>",
+    "optimizer_config": {
+      "name": "Adam",
+      "weight_decay": null,
+      "clipnorm": null,
+      "global_clipnorm": null,
+      "clipvalue": null,
+      "use_ema": false,
+      "ema_momentum": 0.99,
+      "ema_overwrite_frequency": null,
+      "jit_compile": false,
+      "is_legacy_optimizer": false,
+      "learning_rate": 0.0010000000474974513,
+      "beta_1": 0.9,
+      "beta_2": 0.999,
+      "epsilon": 1e-07,
+      "amsgrad": false
+    },
+    "loss": "binary_crossentropy",
+    "metrics": [],
+    "random_seed": 4074335706,
+    "np_seed": 975059456,
+    "tf_seed": [
+      null,
+      null
+    ],
+    "tf_version": "2.15.0",
+    "python_version": "3.9.21",
+    "platform": "Windows-10-10.0.26100-SP0",
+    "hardware": {
+      "cpu": "Intel64 Family 6 Model 186 Stepping 3, GenuineIntel",
+      "gpu": []
+    },
+    "start_time": "2025-05-26T23:55:21.004738"
+  },
+  "data_info": {
+    "X_shape": [
+      100,
+      8
+    ],
+    "y_shape": [
+      100
+    ],
+    "X_dtype": "float64",
+    "y_dtype": "int32",
+    "y_class_dist": {
+      "0": 54,
+      "1": 46
+    }
+  },
+  "history": [
+    {
+      "epoch": 0,
+      "loss": 0.6941766738891602,
+      "accuracy": 0.4749999940395355,
+      "val_loss": 0.7014310956001282,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 1,
+      "loss": 0.6916806101799011,
+      "accuracy": 0.48750001192092896,
+      "val_loss": 0.7000426650047302,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 2,
+      "loss": 0.6895135045051575,
+      "accuracy": 0.512499988079071,
+      "val_loss": 0.6995039582252502,
+      "val_accuracy": 0.44999998807907104
+    },
+    {
+      "epoch": 3,
+      "loss": 0.688500702381134,
+      "accuracy": 0.5249999761581421,
+      "val_loss": 0.6993042230606079,
+      "val_accuracy": 0.44999998807907104
+    },
+    {
+      "epoch": 4,
+      "loss": 0.6878354549407959,
+      "accuracy": 0.5,
+      "val_loss": 0.6982792615890503,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 5,
+      "loss": 0.6862742304801941,
+      "accuracy": 0.5,
+      "val_loss": 0.6982314586639404,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 6,
+      "loss": 0.6852375268936157,
+      "accuracy": 0.48750001192092896,
+      "val_loss": 0.6983134150505066,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 7,
+      "loss": 0.6841586828231812,
+      "accuracy": 0.48750001192092896,
+      "val_loss": 0.6983030438423157,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 8,
+      "loss": 0.6831151843070984,
+      "accuracy": 0.48750001192092896,
+      "val_loss": 0.6983140110969543,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 9,
+      "loss": 0.6823855638504028,
+      "accuracy": 0.5,
+      "val_loss": 0.6984004974365234,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 10,
+      "loss": 0.6813985705375671,
+      "accuracy": 0.512499988079071,
+      "val_loss": 0.6983336806297302,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 11,
+      "loss": 0.680770754814148,
+      "accuracy": 0.5249999761581421,
+      "val_loss": 0.6980050802230835,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 12,
+      "loss": 0.6799563765525818,
+      "accuracy": 0.5249999761581421,
+      "val_loss": 0.6984270215034485,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 13,
+      "loss": 0.6791731715202332,
+      "accuracy": 0.550000011920929,
+      "val_loss": 0.6982309222221375,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 14,
+      "loss": 0.6792892217636108,
+      "accuracy": 0.5625,
+      "val_loss": 0.6977027058601379,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 15,
+      "loss": 0.6779990792274475,
+      "accuracy": 0.5625,
+      "val_loss": 0.6983941197395325,
+      "val_accuracy": 0.5
+    },
+    {
+      "epoch": 16,
+      "loss": 0.6771587133407593,
+      "accuracy": 0.5625,
+      "val_loss": 0.6989734768867493,
+      "val_accuracy": 0.44999998807907104
+    },
+    {
+      "epoch": 17,
+      "loss": 0.6764879822731018,
+      "accuracy": 0.5625,
+      "val_loss": 0.699231743812561,
+      "val_accuracy": 0.44999998807907104
+    },
+    {
+      "epoch": 18,
+      "loss": 0.6759659051895142,
+      "accuracy": 0.5625,
+      "val_loss": 0.700048565864563,
+      "val_accuracy": 0.44999998807907104
+    },
+    {
+      "epoch": 19,
+      "loss": 0.6753906011581421,
+      "accuracy": 0.5625,
+      "val_loss": 0.7001937031745911,
+      "val_accuracy": 0.44999998807907104
+    }
+  ],
+  "best_epoch": 0,
+  "best_accuracy": 0.5,
+  "train_end_time": "2025-05-26T23:55:23.297381",
+  "total_train_seconds": 2.292643,
+  "early_stopping_epoch": null,
+  "epoch_log_file": "logs\\mj_22_20250526_235520\\epoch_log_20250526_235520.jsonl"
+}
