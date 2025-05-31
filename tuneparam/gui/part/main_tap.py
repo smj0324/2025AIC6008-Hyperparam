@@ -4,7 +4,7 @@ from tkinter import ttk
 from datetime import datetime
 from tuneparam.gui.theme.fonts import DEFAULT_FONT, ERROR_FONT_LARGE, ERROR_FONT, ERROR_FONT_SMALL, ERROR_FONT_UNDERLINE
 
-def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_callback=None):
+def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_callback=None, logger = None):
     username_var = tk.StringVar()
     version_var = tk.StringVar(value=preset_data.get("Version", "") if preset_data else "")
     hardware_var = tk.StringVar(value=preset_data.get("Hardware", "") if preset_data else "")
@@ -149,7 +149,8 @@ def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_
             "Dataset Type": dataset_type_var.get(),
             "Goal": goal_var.get()
         }
-        print(data)
+        logger.user_data = data
+
         result = check_train_condition(data)
         if result:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")

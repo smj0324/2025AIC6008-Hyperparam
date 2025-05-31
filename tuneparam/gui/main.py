@@ -74,7 +74,7 @@ def launch_experiment(
         threading.Thread(target=fit_thread, daemon=True).start()
 
     setup_main_tab(tab_main, notebook, tab_train, preset_data=main_preset,
-                   set_log_dir_callback=start_training_with_log_dir)
+                   set_log_dir_callback=start_training_with_log_dir, logger = _preset_logger)
 
     root.mainloop()
     

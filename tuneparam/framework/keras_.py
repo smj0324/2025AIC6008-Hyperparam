@@ -49,6 +49,7 @@ class TrainingLogger(Callback):
         self.params_info = params if params else {}
         self.summary = summary_params
         self.params_key = copy.deepcopy(list(summary_params.keys()))
+        self.user_data = {}
 
         if y is not None:
             labels, counts = np.unique(y, return_counts=True)
@@ -130,6 +131,8 @@ class TrainingLogger(Callback):
     def on_epoch_end(self, epoch, logs=None):
         log_entry = {"epoch": epoch, **(logs or {})}
         self.logs.append(log_entry)
+        # todo DB 안에 log 저장하기
+        
         # 매 에포크별로 jsonl(한 줄에 하나) 파일에 append
         with open(self.epoch_log_path, "a", encoding="utf-8") as f:
             json.dump(log_entry, f, ensure_ascii=False)
