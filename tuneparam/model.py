@@ -5,6 +5,8 @@ from typing import Dict, Any, Optional
 from openai import OpenAI
 from tkinter import messagebox
 from dotenv import load_dotenv
+
+from models import create_hparam_prompt
 from tuneparam.rag.search_faiss import faiss_search
 
 load_dotenv()
@@ -42,14 +44,14 @@ class HyperparameterOptimizer:
             rag_evidence = faiss_search(f"{model_name}")
             model_prompt = self._get_model_specific_prompt(model_name, current_params, dataset_type, goal, rag_evidence)
             model_parmas = self._get_model_specific_params(model_name)
-            response = self._query_llm(current_params, training_results, model_prompt, dataset_type, goal, model_parmas)
+            response = self._query_llm(current_params, training_results, model_prompt, dataset_type, goal, model_parmas, model_name= model_name)
             print("*" * 80, "\n", response, "\n", "*" * 80)
             if response:
                 return response
 
     def _get_model_specific_params(self, model_name: str):
         model_parameter = {
-            "ResNet": {
+            "Resnet": {
                 "recommendations": {
                     "optimizer": "",
                     "learning_rate": "",
@@ -195,40 +197,49 @@ class HyperparameterOptimizer:
         return base_prompt
 
     def _query_llm(self, current_params: Dict[str, Any], training_results: Dict[str, float],
-                   model_prompt: str, dataset_type: str, goal: str, model_parmas: str) -> Optional[Dict[str, Any]]:
+                   model_prompt: str, dataset_type: str, goal: str, model_parmas: str, model_name :str) -> Optional[Dict[str, Any]]:
         """Query LLM for hyperparameter recommendations"""
         if not self.client:
             return None
 
         try:
-            system_prompt = """You are a machine learning hyperparameter optimization expert.
-            Analyze the given model, dataset, current parameters, and training results to recommend optimal hyperparameters.
-            Provide response in JSON format only, without additional explanation."""
+            if model_name != 'Resnet':
+                system_prompt = """You are a machine learning hyperparameter optimization expert.
+                Analyze the given model, dataset, current parameters, and training results to recommend optimal hyperparameters.
+                Provide response in JSON format only, without additional explanation."""
 
-            user_prompt = f"""
-            Current hyperparameters:
-            {json.dumps(current_params, indent=2)}
+                user_prompt = f"""
+                Current hyperparameters:
+                {json.dumps(current_params, indent=2)}
 
-            Training results:
-            {json.dumps(training_results, indent=2)}
+                Training results:
+                {json.dumps(training_results, indent=2)}
 
-            Dataset type: {dataset_type}
-            Optimization goal: {goal}
+                Dataset type: {dataset_type}
+                Optimization goal: {goal}
 
-            {model_prompt}
+                {model_prompt}
 
-            Respond in this JSON format only:
-            {model_parmas}
-            """
+                Respond in this JSON format only:
+                {model_parmas}
+                """
+            else:
+                prompt = create_hparam_prompt(current_params, training_results, dataset_type, goal, model_prompt)
+
+                system_prompt = prompt["system_prompt"]
+                user_prompt = prompt["user_prompt"]
+
+                print("system : ", system_prompt)
+                print("user : ", user_prompt)
 
             response = self.client.chat.completions.create(
-                model="gpt-4.1-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.2,
-                max_tokens=1000
+                    model="gpt-4.1-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.2,
+                    max_tokens=1000
             )
 
             content = response.choices[0].message.content
