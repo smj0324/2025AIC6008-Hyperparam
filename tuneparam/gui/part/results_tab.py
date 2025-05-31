@@ -94,14 +94,16 @@ def apply_gpt_params(tab_train, logger: TrainingLogger):
     included, excluded = split_summary_by_keys(logger.summary, logger.params_key)
     print(included)
     print(excluded)
+    print(logger.user_data)
+
     optimizer = HyperparameterOptimizer()
 
     recommendations = optimizer.recommend_params(
         current_params=included,
         training_results=excluded,
-        model_name="MobilenetV4",
-        dataset_type="Image",
-        goal="Accuracy"
+        model_name=logger.user_data['Model Type'],
+        dataset_type=logger.user_data['Dataset Type'],
+        goal=logger.user_data['Goal']
     )
     print("Recommended hyperparameters:")
     print(json.dumps(recommendations, indent=2, ensure_ascii=False))
