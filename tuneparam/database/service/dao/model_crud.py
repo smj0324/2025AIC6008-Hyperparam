@@ -29,6 +29,8 @@ def get_model_by_version_and_type(db: Session, version: str, model_type: str) ->
         Model.model_type == model_type
     ).first()
 
+def get_all_models(db: Session) -> List[Model]:
+    return db.query(Model).all()
 
 # UPDATE - 모델 정보 수정 (복합키 기반)
 def update_model_for_user(db: Session, username: str, model_size: str, model_type: str, update_data: dict) -> Optional[
