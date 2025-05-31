@@ -170,9 +170,19 @@ class TrainingLogger(Callback):
 
         self.summary["logs_every_10"] = sampled_logs
 
+        relative_path = self.init_info_path
+        absolute_path = os.path.abspath(relative_path)
         db = SessionLocal()
+
+
+        self.model_db.init_info_path = absolute_path
+
+
+
         for log_data in self.logs:
             create_training_log(db=db, model_id=self.model_db.id, log_data=log_data)
+        db.add(self.model_db)  # 이미 세션에 있으면 생략 가능
+        db.commit()
         db.close()
 
 

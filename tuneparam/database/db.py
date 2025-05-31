@@ -6,10 +6,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# todo 이부분경로 각자 최상위 디렉토리로 설정해주세요~
-db_dir = "C:/Users/a/Desktop/code/team/2025AIC6008-Hyperparam"
-
-# 데이터베이스 파일 경로
+import os
+# 현재 파일 위치에서 최상위 디렉토리(예: 3단계 위) 가져오기
+db_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 DATABASE_URL = f"sqlite:///{db_dir}/my_database.db"
 
 engine = create_engine(

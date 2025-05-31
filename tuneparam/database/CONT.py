@@ -24,7 +24,8 @@ TEST_MODEL2 = {
     "dataset_type": "Image",
     "goal": "Accuracy",
     "version": "1.0",
-    "total_epoch" : 200
+    "total_epoch" : 200,
+    "init_info_path":  r"C:\Users\a\Desktop\code\team\2025AIC6008-Hyperparam\logs\2_2_20250526_205920\init_info_20250526_205920.json"
 }
 
 TEST_UPDATE_USER = {

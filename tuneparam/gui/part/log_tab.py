@@ -12,6 +12,8 @@ from tuneparam.database.service.dao import user_crud, create_training_log, get_a
 from tuneparam.database.schema import Model, User
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter.scrolledtext import ScrolledText
+
 
 # 그래프용 작은 폰트 정의
 GRAPH_FONT = ('Helvetica', 8)
@@ -57,7 +59,7 @@ def setup_log_tab(tab_train, log_dir=None):
     ))
     pair_labels = [f"{t} / {v}" for t, v in type_version_pairs]  # 표시용 문자열
 
-    # UI 구성
+    # UI 상단: 모델 선택 콤보박스
     frame = ttk.Frame(tab_train)
     frame.pack(fill='x', pady=5)
 
@@ -65,20 +67,45 @@ def setup_log_tab(tab_train, log_dir=None):
     model_pair_cb = ttk.Combobox(frame, values=pair_labels, state='readonly')
     model_pair_cb.pack(side='left', padx=5)
 
-    log_frame = ttk.Frame(tab_train)
-    log_frame.pack(fill='both', expand=True, pady=10, padx=10)
+    # 메인 영역 프레임 (좌우로 나눔)
+    main_frame = ttk.Frame(tab_train)
+    main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+    left_frame = ttk.LabelFrame(main_frame, text="Training Parameters")
+    left_frame.pack(side='left', fill='both', expand=True, padx=(0, 10))
+
+    right_frame = ttk.LabelFrame(main_frame, text="Training Log")
+    right_frame.pack(side='left', fill='both', expand=True)
+
+    # 하이퍼파라미터 표시용 텍스트박스
+    params_text = ScrolledText(left_frame, height=20, wrap='word')
+    params_text.pack(fill='both', expand=True)
+
+    def display_params_from_json(json_path):
+        if not json_path or not os.path.exists(json_path):
+            params_text.delete(1.0, 'end')
+            params_text.insert('end', "No parameter info available.")
+            return
+
+        try:
+            with open(json_path, 'r') as f:
+                data = json.load(f)
+            params_info = data.get("params_info", {})
+        except Exception as e:
+            params_text.delete(1.0, 'end')
+            params_text.insert('end', f"Error loading JSON: {e}")
+            return
+
+        formatted = "\n".join(f"{key}: {value}" for key, value in params_info.items())
+        params_text.delete(1.0, 'end')
+        params_text.insert('end', formatted)
 
     def draw_log_plot_from_db_logs(logs):
-
-
         if not logs:
             print("No training logs to display")
             return
 
-        # 정렬
         logs = sorted(logs, key=lambda x: x.epoch or 0)
-
-        # 값 추출
         epochs = [log.epoch for log in logs]
         train_loss = [log.loss for log in logs]
         val_loss = [log.val_loss for log in logs]
@@ -87,7 +114,6 @@ def setup_log_tab(tab_train, log_dir=None):
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
 
-        # Loss Plot
         ax1.plot(epochs, train_loss, label="Train Loss", color='blue')
         ax1.plot(epochs, val_loss, label="Val Loss", color='orange')
         ax1.set_ylabel("Loss")
@@ -95,7 +121,6 @@ def setup_log_tab(tab_train, log_dir=None):
         ax1.legend()
         ax1.grid(True)
 
-        # Accuracy Plot
         ax2.plot(epochs, train_acc, label="Train Accuracy", color='green')
         ax2.plot(epochs, val_acc, label="Val Accuracy", color='red')
         ax2.set_xlabel("Epoch")
@@ -106,31 +131,31 @@ def setup_log_tab(tab_train, log_dir=None):
 
         fig.tight_layout()
 
-        # Tkinter에 출력
-        canvas = FigureCanvasTkAgg(fig, master=log_frame)
+        canvas = FigureCanvasTkAgg(fig, master=right_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill='both', expand=True)
 
     def load_logs_and_draw(model_type, version):
-        # DB에서 모델 가져오기
         db = SessionLocal()
         model = get_model_by_version_and_type(db=db, model_type=model_type, version=version)
         db.close()
 
-        for widget in log_frame.winfo_children():
+        for widget in right_frame.winfo_children():
             widget.destroy()
 
         if not model:
             print(f"No model found for {model_type} v{version}")
             return
 
+        # 왼쪽: 하이퍼파라미터 정보 표시
+        display_params_from_json(model.init_info_path)
+
+        # 오른쪽: 로그 그래프 표시
         logs = model.training_logs
         if not logs:
             print("No training logs found.")
             return
 
-        # 정렬 보장
-        logs = sorted(logs, key=lambda x: x.epoch or 0)
         draw_log_plot_from_db_logs(logs)
 
     def on_model_pair_selected(event):

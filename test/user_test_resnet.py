@@ -17,7 +17,7 @@ training_params = {
     "model_name": "resnet18",
     "input_shape": (32, 32, 3),
     "num_classes": 100,
-    "epochs": 1,
+    "epochs": 100,
     "batch_size": 64,
     "shuffle": True,
     "verbose": 1,

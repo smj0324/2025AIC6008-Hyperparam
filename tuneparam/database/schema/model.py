@@ -21,6 +21,7 @@ class Model(Base):
     total_epoch = Column(Integer, default=0, nullable=True, name="total_epoch")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), name="created_at")
     version = Column(String, nullable=False, name="version")
+    init_info_path = Column(String, nullable=True, name="init_info_path")
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, name="user_id")
     user = relationship("User", back_populates="models", lazy="selectin")
