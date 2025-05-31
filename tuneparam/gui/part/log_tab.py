@@ -8,8 +8,12 @@ import time
 
 from tuneparam.gui.theme.fonts import DEFAULT_FONT, ERROR_FONT_SMALL
 from tuneparam.database.db import SessionLocal
-from tuneparam.database.service.dao import user_crud
-from tuneparam.gui.visual import *
+from tuneparam.database.service.dao import user_crud, create_training_log, get_all_models, get_model_by_version_and_type
+from tuneparam.database.schema import Model, User
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter.scrolledtext import ScrolledText
+
 
 # 그래프용 작은 폰트 정의
 GRAPH_FONT = ('Helvetica', 8)
@@ -41,149 +45,130 @@ def get_theme_colors(is_dark_theme=False):
             'canvas_bg': "white"
         }
 
-def setup_log_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False):
-    """Train 탭 설정 - 실시간 학습 상태 모니터링 기능 추가"""
-    # 메인 변수들
-    train_state = {
-        "monitoring": False,
-        "log_dir": log_dir,
-        "user_data": user_data,
-        "current_epoch": 0,
-        "total_epochs": 0,
-        "last_loss": 0,
-        "last_accuracy": 0,
-        "params_info": {},
-        "is_dark_theme": is_dark_theme,
-        "colors": get_theme_colors(is_dark_theme)
-    }
+from tkinter import ttk
+
+
+def setup_log_tab(tab_train, log_dir=None):
     db = SessionLocal()
-    user = user_crud.get_user_by_username(db, username="alice")
-    print(user)
+    models = get_all_models(db=db)
     db.close()
 
-    colors = train_state["colors"]
+    # (model_type, version) 조합을 정렬
+    type_version_pairs = sorted(set(
+        (m.model_type, m.version) for m in models if m.model_type and m.version
+    ))
+    pair_labels = [f"{t} / {v}" for t, v in type_version_pairs]  # 표시용 문자열
 
-    # init_info 파일에서 파라미터 로드
-    if log_dir and os.path.exists(log_dir):
-        init_info_files = glob.glob(os.path.join(log_dir, "init_info_*.json"))
-        if init_info_files:
-            try:
-                latest_file = sorted(init_info_files)[-1]
-                with open(latest_file, 'r', encoding='utf-8') as f:
-                    init_data = json.load(f)
-                    if 'params_info' in init_data:
-                        train_state["params_info"] = init_data['params_info']
-                        train_state["total_epochs"] = init_data['params_info'].get('epochs', 0)
-                print(f"✅ Init info 파일 로드 성공: {latest_file}")
-            except Exception as e:
-                print(f"❌ Init info 파일 로드 오류: {e}")
+    # UI 상단: 모델 선택 콤보박스
+    frame = ttk.Frame(tab_train)
+    frame.pack(fill='x', pady=5)
 
-    # 기본 그리드 설정
-    tab_train.columnconfigure(0, weight=1)
-    tab_train.columnconfigure(1, weight=1)
-    tab_train.columnconfigure(2, weight=1)
+    ttk.Label(frame, text="Model (Type / Version):").pack(side='left', padx=5)
+    model_pair_cb = ttk.Combobox(frame, values=pair_labels, state='readonly')
+    model_pair_cb.pack(side='left', padx=5)
 
-    username = user.username
-    model = user.models[0]
+    # 메인 영역 프레임 (좌우로 나눔)
+    main_frame = ttk.Frame(tab_train)
+    main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-    training_logs = user.models[0].training_logs
+    left_frame = ttk.LabelFrame(main_frame, text="Training Parameters")
+    left_frame.pack(side='left', fill='both', expand=True, padx=(0, 10))
 
-    print(training_logs[0].val_accuracy)
-    print(training_logs[1].val_accuracy)
-    print(training_logs[2].val_accuracy)
+    right_frame = ttk.LabelFrame(main_frame, text="Training Log")
+    right_frame.pack(side='left', fill='both', expand=True)
 
-    # 상태 메시지 표시 (첫 번째 행)
-    status_label = ttk.Label(
-        tab_train, 
-        text=f"{username}님! {model.model_type} 모델을 이용한 학습을 시작합니다.",
-        font=DEFAULT_FONT
-    )
-    status_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=10, pady=(10, 5))
-    
-    # 설명 텍스트 (두 번째 행)
-    desc_label = ttk.Label(
-        tab_train, 
-        text="현재 학습 상태와 파라미터입니다.", 
-        font=DEFAULT_FONT
-    )
-    desc_label.grid(row=1, column=0, columnspan=3, sticky="w", padx=10, pady=(5, 10))
-    
-    # 진행 상태 표시
-    progress_frame = ttk.Frame(tab_train)
-    progress_frame.grid(row=2, column=0, columnspan=3, sticky="ew", padx=10, pady=(0, 10))
-    print(model.total_epoch)
-    # 에포크 진행 표시
-    epoch_label = ttk.Label(
-        progress_frame, 
-        text=f"전체 에포크: {str(model.total_epoch)}",
-        font=DEFAULT_FONT
-    )
+    # 하이퍼파라미터 표시용 텍스트박스
+    params_text = ScrolledText(left_frame, height=20, wrap='word')
+    params_text.pack(fill='both', expand=True)
 
-    epoch_label.pack(side="left", padx=(0, 20))
-    
-    # 그래프 프레임 생성
-    home_frame = ttk.LabelFrame(tab_train, text="Training Parameters")
-    home_frame.grid(row=3, column=0, sticky="nsew", padx=5, pady=5)
-    
-    loss_frame = ttk.LabelFrame(tab_train, text="Loss Graph")
-    loss_frame.grid(row=3, column=1, sticky="nsew", padx=5, pady=5)
-    
-    acc_frame = ttk.LabelFrame(tab_train, text="Accuracy Graph")
-    acc_frame.grid(row=3, column=2, sticky="nsew", padx=5, pady=5)
-    
-    # 파라미터 표시
-    param_canvas = tk.Canvas(home_frame, bg=colors['canvas_bg'], highlightthickness=0)
-    param_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-    
-    # 초기 파라미터 텍스트 설정
-    setup_initial_param_text(train_state, param_canvas)
-    print(len(training_logs))
+    def display_params_from_json(json_path):
+        if not json_path or not os.path.exists(json_path):
+            params_text.delete(1.0, 'end')
+            params_text.insert('end', "No parameter info available.")
+            return
 
-    # Loss 그래프 설정
-    loss_canvas = tk.Canvas(loss_frame, bg=colors['canvas_bg'], highlightthickness=0, width=300, height=200)
-    loss_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-    setup_loss_graph(loss_canvas, colors)
-    draw_loss_graph(loss_canvas, training_logs, colors)
+        try:
+            with open(json_path, 'r') as f:
+                data = json.load(f)
+            params_info = data.get("params_info", {})
+        except Exception as e:
+            params_text.delete(1.0, 'end')
+            params_text.insert('end', f"Error loading JSON: {e}")
+            return
 
+        formatted = "\n".join(f"{key}: {value}" for key, value in params_info.items())
+        params_text.delete(1.0, 'end')
+        params_text.insert('end', formatted)
 
-    # Accuracy 그래프 설정
-    acc_canvas = tk.Canvas(acc_frame, bg=colors['canvas_bg'], highlightthickness=0, width=300, height=200)
-    acc_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-    # setup_accuracy_graph(acc_canvas, colors)
-    # draw_accuracy_graph(acc_canvas, training_logs, colors)  # ← 추가
+    def draw_log_plot_from_db_logs(logs):
+        if not logs:
+            print("No training logs to display")
+            return
 
+        logs = sorted(logs, key=lambda x: x.epoch or 0)
+        epochs = [log.epoch for log in logs]
+        train_loss = [log.loss for log in logs]
+        val_loss = [log.val_loss for log in logs]
+        train_acc = [log.accuracy for log in logs]
+        val_acc = [log.val_accuracy for log in logs]
 
-# 메인 코드와 연결하는 부분
-# 초기 파라미터 텍스트 설정
-def setup_initial_param_text(train_state, param_canvas):
-    """초기 파라미터 텍스트 설정"""
-    text_content = "Training Configuration:\n\n"
-    params_info = train_state.get("params_info", {})
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
 
-    # 학습 관련 파라미터만 표시
-    if params_info:
-        training_params = {
-            "Epochs": params_info.get("epochs", "N/A"),
-            "Batch Size": params_info.get("batch_size", "N/A"),
-            "Validation Split": f"{params_info.get('validation_split', 0) * 100}%",
-            "Learning Rate": params_info.get("learning_rate", "N/A"),
-            "Optimizer": params_info.get("optimizer", "N/A"),
-            "Loss Function": params_info.get("loss", "N/A")
-        }
+        ax1.plot(epochs, train_loss, label="Train Loss", color='blue')
+        ax1.plot(epochs, val_loss, label="Val Loss", color='orange')
+        ax1.set_ylabel("Loss")
+        ax1.set_title("Training & Validation Loss")
+        ax1.legend()
+        ax1.grid(True)
 
-        # None이 아닌 값만 표시
-        for key, value in training_params.items():
-            if value not in [None, "N/A"]:
-                text_content += f"{key}: {value}\n"
-    else:
-        text_content = "학습 파라미터를 불러오는 중..."
+        ax2.plot(epochs, train_acc, label="Train Accuracy", color='green')
+        ax2.plot(epochs, val_acc, label="Val Accuracy", color='red')
+        ax2.set_xlabel("Epoch")
+        ax2.set_ylabel("Accuracy")
+        ax2.set_title("Training & Validation Accuracy")
+        ax2.legend()
+        ax2.grid(True)
 
-    param_canvas.delete("all")
-    param_canvas.create_text(
-        10, 10,
-        text=text_content,
-        anchor="nw",
-        font=DEFAULT_FONT,
-        fill=train_state["colors"]['fg'],
-        tags="param_text"
-    )
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=right_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill='both', expand=True)
+
+    def load_logs_and_draw(model_type, version):
+        db = SessionLocal()
+        model = get_model_by_version_and_type(db=db, model_type=model_type, version=version)
+        db.close()
+
+        for widget in right_frame.winfo_children():
+            widget.destroy()
+
+        if not model:
+            print(f"No model found for {model_type} v{version}")
+            return
+
+        # 왼쪽: 하이퍼파라미터 정보 표시
+        display_params_from_json(model.init_info_path)
+
+        # 오른쪽: 로그 그래프 표시
+        logs = model.training_logs
+        if not logs:
+            print("No training logs found.")
+            return
+
+        draw_log_plot_from_db_logs(logs)
+
+    def on_model_pair_selected(event):
+        selection = model_pair_cb.get()
+        if " / " not in selection:
+            return
+        model_type, version = selection.split(" / ")
+        load_logs_and_draw(model_type, version)
+
+    model_pair_cb.bind('<<ComboboxSelected>>', on_model_pair_selected)
+
+    # 초기 자동 표시
+    if pair_labels:
+        model_pair_cb.current(0)
+        default_model_type, default_version = type_version_pairs[0]
+        load_logs_and_draw(default_model_type, default_version)

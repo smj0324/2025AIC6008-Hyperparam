@@ -8,6 +8,10 @@ from datetime import datetime
 import platform
 import copy
 
+from tuneparam.database.service.dao import create_training_log
+from tuneparam.database.db import SessionLocal
+
+
 def pretty_print_dict(title, d):
     print(f"\n{'='*30}\n{title}\n{'='*30}")
     print(json.dumps(d, ensure_ascii=False, indent=2))
@@ -35,7 +39,6 @@ def convert_json_serializable_key(key):
     
 
 
-
 class TrainingLogger(Callback):
     def __init__(self, log_dir="logs", params=None, summary_params = None, X=None, y=None):
         super().__init__()
@@ -50,6 +53,7 @@ class TrainingLogger(Callback):
         self.summary = summary_params
         self.params_key = copy.deepcopy(list(summary_params.keys()))
         self.user_data = {}
+        self.model_db = None
 
         if y is not None:
             labels, counts = np.unique(y, return_counts=True)
@@ -147,13 +151,11 @@ class TrainingLogger(Callback):
         for cb in getattr(self.model, 'callbacks', []):
             if isinstance(cb, EarlyStopping):
                 early_stopping_epoch = cb.stopped_epoch
-        print(self.summary)
         self.summary.update({
             "best_epoch": best_epoch,
             "best_accuracy": max((l.get("val_accuracy", l.get("accuracy", 0)) for l in self.logs), default=None),
             "train_end_time": end_time.isoformat(),
         })
-        print(self.summary)
 
         sampled_logs = []
 
@@ -167,6 +169,21 @@ class TrainingLogger(Callback):
             sampled_logs.append(rounded_log)
 
         self.summary["logs_every_10"] = sampled_logs
+
+        relative_path = self.init_info_path
+        absolute_path = os.path.abspath(relative_path)
+        db = SessionLocal()
+
+
+        self.model_db.init_info_path = absolute_path
+
+
+
+        for log_data in self.logs:
+            create_training_log(db=db, model_id=self.model_db.id, log_data=log_data)
+        db.add(self.model_db)  # 이미 세션에 있으면 생략 가능
+        db.commit()
+        db.close()
 
 
         summary = {

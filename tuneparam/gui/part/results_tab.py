@@ -105,6 +105,7 @@ def apply_gpt_params(tab_train, logger: TrainingLogger):
         dataset_type=logger.user_data['Dataset Type'],
         goal=logger.user_data['Goal']
     )
+
     return recommendations
 
     # try:
@@ -171,7 +172,7 @@ def show_gpt_params(tab_train, logger: TrainingLogger):
     improvement_box.configure(state="disabled")
     improvement_box.pack(fill="x", expand=True, pady=2)
 
-def setup_results_tab(tab_train,  train_parameters=None, preset_logger : TrainingLogger = None):
+def setup_results_tab(tab_train, train_parameters=None, preset_logger : TrainingLogger = None, user_data=None):
 
     if train_parameters:
         used_params_frame = ttk.LabelFrame(tab_train, text="사용된 훈련 파라미터")
