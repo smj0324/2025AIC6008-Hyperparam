@@ -4,7 +4,7 @@ from tkinter import ttk
 root = tk.Tk()
 root.title("Hyper Parameter Tuning System")
 root.option_add("*tearOff", False)
-root.geometry("800x500")
+root.geometry("900x600")
 
 # Forest theme source
 root.tk.call("source", "tuneparam/gui/theme/forest-dark.tcl")
@@ -17,7 +17,7 @@ THEME_BG = {
     "forest-light": "#FFFFFF"
 }
 
-DEFAULT_FONT = ("나눔스퀘어_ac Bold", 11)
+DEFAULT_FONT = ("Helvetica", 11)
 
 def set_theme(theme):
     style.theme_use(theme)
