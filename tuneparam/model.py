@@ -6,7 +6,7 @@ import base64
 from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
-from tuneparam.rag.search_faiss import faiss_search
+#from tuneparam.rag.search_faiss import faiss_search
 
 import matplotlib
 matplotlib.use("Agg")  # 화면 없이 파일로만 저장하기 위한 설정
@@ -30,6 +30,9 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_LLM_MODEL = os.environ.get("OPENAI_LLM_MODEL", "gpt-4o-mini")
 OPENAI_VISION_MODEL = os.environ.get("OPENAI_VISION_MODEL", "gpt-4o")
 
+def faiss_search(query: str, top_k: int = 5):
+    # 실제 RAG 검색을 구현할 때 대체
+    return f"No specific evidence found for {query}. Using general best practices."
 
 def extract_timestamp_from_filename(filepath: str) -> int:
 
@@ -407,7 +410,44 @@ class HyperparameterOptimizer:
                     "embedding_dim": "",
                     "tagging_scheme": "",
                     "output_classifier": "",
-                    "early_stopping_patience": ""
+                    "early_stopping_patience": "",
+                    "recurrent_dropout": "",
+                    "return_sequences": "",
+                    "activation": "",
+                    "recurrent_activation": "",
+                    "use_bias": "",
+                    "kernel_initializer": "",
+                    "recurrent_initializer": "",
+                    "bias_initializer": "",
+                    "unit_forget_bias": "",
+                    "kernel_regularizer": "",
+                    "recurrent_regularizer": "",
+                    "bias_regularizer": "",
+                    "activity_regularizer": "",
+                    "kernel_constraint": "",
+                    "recurrent_constraint": "",
+                    "bias_constraint": "",
+                    "implementation": "",
+                    "go_backwards": "",
+                    "stateful": "",
+                    "time_major": "",
+                    "unroll": "",
+                    "dense_dropout": "",
+                    "verbose": "",
+                    "callbacks": "",
+                    "validation_split": "",
+                    "validation_data": "",
+                    "shuffle": "",
+                    "class_weight": "",
+                    "sample_weight": "",
+                    "initial_epoch": "",
+                    "steps_per_epoch": "",
+                    "validation_steps": "",
+                    "validation_batch_size": "",
+                    "validation_freq": "",
+                    "max_queue_size": "",
+                    "workers": "",
+                    "use_multiprocessing": ""
                 },
                 "reasons": {
                     "optimizer": "",
@@ -423,7 +463,44 @@ class HyperparameterOptimizer:
                     "embedding_dim": "",
                     "tagging_scheme": "",
                     "output_classifier": "",
-                    "early_stopping_patience": ""
+                    "early_stopping_patience": "",
+                    "recurrent_dropout": "",
+                    "return_sequences": "",
+                    "activation": "",
+                    "recurrent_activation": "",
+                    "use_bias": "",
+                    "kernel_initializer": "",
+                    "recurrent_initializer": "",
+                    "bias_initializer": "",
+                    "unit_forget_bias": "",
+                    "kernel_regularizer": "",
+                    "recurrent_regularizer": "",
+                    "bias_regularizer": "",
+                    "activity_regularizer": "",
+                    "kernel_constraint": "",
+                    "recurrent_constraint": "",
+                    "bias_constraint": "",
+                    "implementation": "",
+                    "go_backwards": "",
+                    "stateful": "",
+                    "time_major": "",
+                    "unroll": "",
+                    "dense_dropout": "",
+                    "verbose": "",
+                    "callbacks": "",
+                    "validation_split": "",
+                    "validation_data": "",
+                    "shuffle": "",
+                    "class_weight": "",
+                    "sample_weight": "",
+                    "initial_epoch": "",
+                    "steps_per_epoch": "",
+                    "validation_steps": "",
+                    "validation_batch_size": "",
+                    "validation_freq": "",
+                    "max_queue_size": "",
+                    "workers": "",
+                    "use_multiprocessing": ""
                 },
                 "expected_improvement": ""
             }

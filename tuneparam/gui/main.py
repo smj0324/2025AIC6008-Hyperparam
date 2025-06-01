@@ -113,8 +113,8 @@ def start_retrain(gpt_output):
     print("뭐노:", model_type)
     if model_type == "MobilenetV3":
         model, history = mobilenetv3.retrain_mobilenet(X_train, y_train, gpt_output)
-    # elif model_type == "lstm":
-    #     model, history = retrain_lstm(X, y, gpt_output)
+    elif model_type == "lstm":
+        model, history = lstm.retrain_lstm(X_train, y_train, gpt_output)
     # elif model_type == "resnet":
     #     model, history = retrain_resnet(X, y, gpt_output)
     else:
