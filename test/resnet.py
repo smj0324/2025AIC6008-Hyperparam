@@ -3,6 +3,8 @@ from tensorflow.keras import layers, Model
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.datasets import cifar100
 
 def conv_block(x, filters, kernel_size=3, stride=1):
     x = layers.Conv2D(filters, kernel_size, strides=stride, padding='same', use_bias=False)(x)
@@ -98,3 +100,46 @@ def build_and_compile_model(training_params: dict) -> Model:
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     return model
+
+
+def test_resnet():
+    training_params = {
+        "model_name": "resnet18",
+        "input_shape": (32, 32, 3),
+        "num_classes": 100,
+        "epochs": 100,
+        "batch_size": 64,
+        "shuffle": True,
+        "verbose": 1,
+        "initial_epoch": 0,
+        "validation_freq": 1,
+        "validation_split": 0.2,
+        "max_queue_size": 10,
+        "workers": 1,
+        "use_multiprocessing": False,
+
+        "optimizer": "adam",
+        "learning_rate": 0.001,
+        "weight_decay": 1e-4,
+        "momentum": 0.9,
+        "dropout_rate": 0.0,
+        "label_smoothing": 0.0,
+        "scheduler": None,
+        "data_augmentation": False,
+        "batch_normalization": True,
+        "initialization": "he_normal",
+        "loss": "categorical_crossentropy",
+        "metrics": ["accuracy"]
+    }
+
+    num_classes = 100
+
+    (x_train, y_train), (x_test, y_test) = cifar100.load_data()
+    y_train = to_categorical(y_train, num_classes)
+    y_test = to_categorical(y_test, num_classes)
+    x_train = x_train.astype('float32') / 255.0
+    x_test = x_test.astype('float32') / 255.0
+
+    model = build_and_compile_model(training_params)
+
+    return model, x_test, y_train, training_params
