@@ -10,7 +10,7 @@ from tensorflow.keras.optimizers import Adam
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # 필요한 외부 모듈 임포트
-from models.resnet import get_resnet_model, build_and_compile_model
+from test.resnet import build_and_compile_model
 from tuneparam.gui.main import launch_experiment
 
 training_params = {
@@ -43,7 +43,7 @@ training_params = {
 }
 
 num_classes = 100
-# 데이터셋 로딩 및 전처리
+
 (x_train, y_train), (x_test, y_test) = cifar100.load_data()
 y_train = to_categorical(y_train, num_classes)
 y_test = to_categorical(y_test, num_classes)
