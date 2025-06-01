@@ -6,6 +6,7 @@ import base64
 from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
+from tuneparam.rag.search_faiss import faiss_search
 
 import matplotlib
 matplotlib.use("Agg")  # 화면 없이 파일로만 저장하기 위한 설정
@@ -257,12 +258,6 @@ def encode_image(image_path: str) -> str:
     with open(image_path, "rb") as img_f:
         return base64.b64encode(img_f.read()).decode("utf-8")
 
-
-def faiss_search(query: str, top_k: int = 5):
-    # 실제 RAG 검색을 구현할 때 대체
-    return []
-
-
 # ─────────────────────────────────────────────────────────────────────────────────────────
 class HyperparameterOptimizer:
 
@@ -284,6 +279,7 @@ class HyperparameterOptimizer:
             return None
 
         rag_evidence = faiss_search(model_name)
+        print("rag_evidence:", rag_evidence)
         model_prompt = self._get_model_specific_prompt(
             model_name, current_params, dataset_type, goal, rag_evidence
         )
@@ -298,6 +294,7 @@ class HyperparameterOptimizer:
             model_params_schema=model_params_schema,
             graph_analysis=graph_analysis
         )
+
         return response
 
     def _get_model_specific_params(self, model_name: str) -> Optional[Dict[str, Any]]:
@@ -334,40 +331,64 @@ class HyperparameterOptimizer:
                 },
                 "expected_improvement": ""
             },
-            "MobileNetV4": {
+            "MobilenetV3": {
                 "recommendations": {
                     "optimizer": "",
                     "learning_rate": "",
                     "batch_size": "",
                     "epochs": "",
-                    "weight_decay": "",
-                    "beta1": "",
-                    "beta2": "",
-                    "dropout_rate": "",
-                    "label_smoothing": "",
-                    "stochastic_depth_drop_rate": "",
-                    "augmentation": "",
-                    "mixup_cutmix": "",
-                    "cosine_decay_alpha": "",
-                    "warmup_epochs": "",
-                    "ema_decay": ""
+                    "verbose": "",
+                    "callbacks": "",
+                    "validation_split": "",
+                    "validation_data": "",
+                    "shuffle": "",
+                    "class_weight": "",
+                    "sample_weight": "",
+                    "initial_epoch": "",
+                    "steps_per_epoch": "",
+                    "validation_steps": "",
+                    "validation_batch_size": "",
+                    "validation_freq": "",
+                    "max_queue_size": "",
+                    "workers": "",
+                    "use_multiprocessing": "",
+                    "alpha": "",
+                    "minimalistic": "",
+                    "include_top": "",
+                    "weights": "",
+                    "input_tensor": "",
+                    "pooling": "",
+                    "classifier_activation": "",
+                    "include_preprocessing": "",
                 },
                 "reasons": {
                     "optimizer": "",
                     "learning_rate": "",
                     "batch_size": "",
                     "epochs": "",
-                    "weight_decay": "",
-                    "beta1": "",
-                    "beta2": "",
-                    "dropout_rate": "",
-                    "label_smoothing": "",
-                    "stochastic_depth_drop_rate": "",
-                    "augmentation": "",
-                    "mixup_cutmix": "",
-                    "cosine_decay_alpha": "",
-                    "warmup_epochs": "",
-                    "ema_decay": ""
+                    "verbose": "",
+                    "callbacks": "",
+                    "validation_split": "",
+                    "validation_data": "",
+                    "shuffle": "",
+                    "class_weight": "",
+                    "sample_weight": "",
+                    "initial_epoch": "",
+                    "steps_per_epoch": "",
+                    "validation_steps": "",
+                    "validation_batch_size": "",
+                    "validation_freq": "",
+                    "max_queue_size": "",
+                    "workers": "",
+                    "use_multiprocessing": "",
+                    "alpha": "",
+                    "minimalistic": "",
+                    "include_top": "",
+                    "weights": "",
+                    "input_tensor": "",
+                    "pooling": "",
+                    "classifier_activation": "",
+                    "include_preprocessing": "",
                 },
                 "expected_improvement": ""
             },
@@ -419,7 +440,7 @@ class HyperparameterOptimizer:
     ) -> str:
 
         base_texts = {
-            "MobilenetV4": f"""
+            "MobilenetV3": f"""
             MobilenetV4 model optimization for {dataset_type} dataset.
             Key considerations:
             1. Balance between batch size and memory usage for mobile environments
@@ -482,6 +503,8 @@ class HyperparameterOptimizer:
             f"Respond in this JSON format only:\n{json.dumps(model_params_schema, ensure_ascii=False, indent=2)}"
         )
 
+        print(f"\n\n\n\n\***************\nUser prompt: {user_prompt}")
+
         if graph_analysis:
             user_prompt += (
                 "\n\nIMPORTANT: The following graph analysis provides critical insights about the training process.\n"
@@ -502,9 +525,10 @@ class HyperparameterOptimizer:
             )
             content = response.choices[0].message.content.strip()
             if "json" in content:
-                body = content.split("json")[1].split("```")[0].strip()")[0].strip()
+                body = content.split("json")[1].split("```")[0].strip()[0].strip()
             else:
                 body = content
+                print(f"\n\n\n\n\***************\ncontent: {content}")
             return json.loads(body)
         except Exception as e:
             print(f"LLM query error: {e}")
