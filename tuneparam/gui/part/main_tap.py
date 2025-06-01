@@ -3,16 +3,20 @@ import os
 from tkinter import ttk
 from datetime import datetime
 from tuneparam.gui.theme.fonts import DEFAULT_FONT, ERROR_FONT_LARGE, ERROR_FONT, ERROR_FONT_SMALL, ERROR_FONT_UNDERLINE
-
-def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_callback=None):
+def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_callback=None, logger = None):
     username_var = tk.StringVar()
     version_var = tk.StringVar(value=preset_data.get("Version", "") if preset_data else "")
     hardware_var = tk.StringVar(value=preset_data.get("Hardware", "") if preset_data else "")
     model_size_var = tk.StringVar(value=preset_data.get("Model Size", "") if preset_data else "")
     dataset_size_var = tk.StringVar(value=preset_data.get("Dataset Size", "") if preset_data else "")
     dataset_type_var = tk.StringVar(value=preset_data.get("Dataset Type", "") if preset_data else "")
-    model_type_var = tk.StringVar(value=preset_data.get("Model Type", "") if preset_data else "")
     goal_var = tk.StringVar(value=preset_data.get("Goal", "") if preset_data else "")
+
+    model_type_value = preset_data.get("Model Type") if preset_data else ""
+    if model_type_value is None or model_type_value == "":
+        model_type_var = tk.StringVar(value="MobilenetV3")
+    else:
+        model_type_var = tk.StringVar(value=model_type_value)
 
     # ---- 폼 위젯을 리스트로 관리 ----
     form_widgets = []
@@ -62,7 +66,7 @@ def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_
     combo_dataset_size.grid(row=5, column=0, sticky="ew", padx=5)
     form_widgets.append(combo_dataset_size)
 
-    combo_model_type = ttk.Combobox(tab_main, textvariable=model_type_var, values=["MobilenetV4", "Resnet", "LSTM"], state="readonly")
+    combo_model_type = ttk.Combobox(tab_main, textvariable=model_type_var, values=["MobilenetV3", "Resnet", "LSTM"], state="readonly")
     combo_model_type.grid(row=5, column=1, sticky="ew", padx=5)
     form_widgets.append(combo_model_type)
 
@@ -149,7 +153,7 @@ def setup_main_tab(tab_main, notebook, tab_train, preset_data=None, set_log_dir_
             "Dataset Type": dataset_type_var.get(),
             "Goal": goal_var.get()
         }
-        print(data)
+        logger.user_data = data
         result = check_train_condition(data)
         if result:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")

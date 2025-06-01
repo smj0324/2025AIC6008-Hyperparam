@@ -13,17 +13,18 @@ htmlcov/
 .tox/
 .nox/
 .cache/
+logs/
 pytest_cache/
 
 # SQLite database files
-*.db
+# *.db
 *.sqlite
 *.sqlite3
 
 # Development data
 data/
-logs/
-*.jsonl
+# logs/
+# *.jsonl
 *.tmp
 *.bak
 *.h5

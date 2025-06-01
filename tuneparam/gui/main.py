@@ -1,27 +1,40 @@
 import threading
 import sys
 import os
+import copy
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from gui.part.utils import root, style, THEME_BG, set_theme, create_notebook_with_tabs, create_theme_buttons
 from gui.part.main_tap import setup_main_tab
 from gui.part.train_tab import setup_train_tab
-from tuneparam.framework.keras_ import TrainingLogger
+from gui.part.log_tab import setup_log_tab
+from gui.part.results_tab import setup_results_tab
+from framework.keras_ import TrainingLogger
+from database.service.dao import model_crud
+from database.db import SessionLocal
+from tuneparam.models import mobilenetv3, lstm, resnet
+
+global X_train, y_train
+global model_type
+X_train = None
+y_train = None
 
 def launch_experiment(
     model,
-    X_train, y_train,
+    X, y,
     training_params=None,
     preset_data=None,
-    custom_callbacks=None,
-    log_dir="logs"
+        custom_callbacks=None,
+        log_dir="logs"
 ):
-
+    global X_train, y_train
+    X_train = X
+    y_train = y
     # ===== GUI 테마/레이아웃 =====
     set_theme("forest-light")
-    root.option_add("*Font", '"나눔스퀘어_ac Bold" 11')
+    root.option_add("*Font", '"Helvetica" 11')
 
-    notebook, tab_main, tab_train, tab_results = create_notebook_with_tabs(root)
+    notebook, tab_main, tab_train, tab_results, tab_logs = create_notebook_with_tabs(root)
     notebook.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=20, pady=20)
 
     root.grid_rowconfigure(1, weight=1)
@@ -29,12 +42,16 @@ def launch_experiment(
     root.grid_columnconfigure(1, weight=0)
 
     params = training_params or {"epochs": 10, "batch_size": 32, "validation_split": 0.2}
-    _preset_logger = TrainingLogger(log_dir=log_dir, params=params, X=X_train, y=y_train)
+    default_params = {"epochs": 10, "batch_size": 32, "validation_split": 0.2}
 
+    summary_params = copy.deepcopy(training_params) if training_params else copy.deepcopy(default_params)
+    _preset_logger = TrainingLogger(log_dir=log_dir, params=params, X=X_train, y=y_train, summary_params=summary_params)
     main_preset = preset_data or _preset_logger.get_preset_data_for_main_tab()
 
-    # Train 탭 초기 설정
+    # 탭 초기 설정
     train_handlers = setup_train_tab(tab_train)
+    results_handlers = setup_results_tab(tab_results, train_parameters=summary_params, preset_logger =_preset_logger)
+    setup_log_tab(tab_logs)
 
     # 테마 변경 핸들러
     def handle_theme_change(theme_name):
@@ -42,13 +59,32 @@ def launch_experiment(
         set_theme(theme_name)
         if train_handlers and "update_theme" in train_handlers:
             train_handlers["update_theme"](is_dark)
+        if results_handlers and "update_theme" in results_handlers:
+            results_handlers["update_theme"](is_dark)
 
     theme_frame = create_theme_buttons(root, handle_theme_change)
     theme_frame.grid(row=0, column=1, sticky="ne", padx=(0, 10), pady=(10, 0))
 
     # ===== TrainingLogger/fit 갱신 함수 =====
     def start_training_with_log_dir(new_log_dir, user_info):
-        logger = TrainingLogger(log_dir=new_log_dir, params=params, X=X_train, y=y_train)
+        global model_type
+        logger = TrainingLogger(log_dir=new_log_dir, params=params, X=X_train, y=y_train, summary_params=summary_params)
+        
+        model_db_data = {
+            "model_size": user_info['Model Size'],
+            "dataset_size": user_info['Dataset Size'],
+            "model_type": user_info['Model Type'],
+            "dataset_type": user_info['Dataset Type'],
+            "goal": user_info['Goal'],
+            "total_epoch": None,
+            'version' : user_info['Version'],
+        }
+        model_type = user_info['Model Type']
+
+        db = SessionLocal()
+        model_db = model_crud.create_model_for_user(db=db, username=None, model_data=model_db_data)
+        db.close()
+        logger.model_db = model_db
         
         # Train 탭 업데이트
         train_handlers["start_monitoring"](new_log_dir, user_info)
@@ -67,7 +103,19 @@ def launch_experiment(
         threading.Thread(target=fit_thread, daemon=True).start()
 
     setup_main_tab(tab_main, notebook, tab_train, preset_data=main_preset,
-                   set_log_dir_callback=start_training_with_log_dir)
+                   set_log_dir_callback=start_training_with_log_dir, logger = _preset_logger)
 
     root.mainloop()
     
+def start_retrain(gpt_output):
+    global model_type
+    if model_type == "MobilenetV3":
+        mobilenetv3.retrain_mobilenet(X_train, y_train, gpt_output)
+    elif model_type == "lstm":
+        lstm.retrain_lstm(X_train, y_train, gpt_output)
+    elif model_type == "Resnet":
+        resnet.retrain_resnet(X_train, y_train, gpt_output)
+    else:
+        raise ValueError(f"지원하지 않는 모델 타입: {model_type}")
+
+

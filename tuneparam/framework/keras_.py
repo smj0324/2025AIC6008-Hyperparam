@@ -6,6 +6,11 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import Callback, EarlyStopping
 from datetime import datetime
 import platform
+import copy
+
+from tuneparam.database.service.dao import create_training_log
+from tuneparam.database.db import SessionLocal
+
 
 def pretty_print_dict(title, d):
     print(f"\n{'='*30}\n{title}\n{'='*30}")
@@ -34,9 +39,8 @@ def convert_json_serializable_key(key):
     
 
 
-
 class TrainingLogger(Callback):
-    def __init__(self, log_dir="logs", params=None, X=None, y=None):
+    def __init__(self, log_dir="logs", params=None, summary_params = None, X=None, y=None):
         super().__init__()
         self.log_dir = log_dir
         os.makedirs(self.log_dir, exist_ok=True)
@@ -46,6 +50,10 @@ class TrainingLogger(Callback):
         self.logs = []
         self.start_time = None
         self.params_info = params if params else {}
+        self.summary = summary_params
+        self.params_key = copy.deepcopy(list(summary_params.keys()))
+        self.user_data = {}
+        self.model_db = None
 
         if y is not None:
             labels, counts = np.unique(y, return_counts=True)
@@ -127,6 +135,8 @@ class TrainingLogger(Callback):
     def on_epoch_end(self, epoch, logs=None):
         log_entry = {"epoch": epoch, **(logs or {})}
         self.logs.append(log_entry)
+        # todo DB 안에 log 저장하기
+        
         # 매 에포크별로 jsonl(한 줄에 하나) 파일에 append
         with open(self.epoch_log_path, "a", encoding="utf-8") as f:
             json.dump(log_entry, f, ensure_ascii=False)
@@ -141,6 +151,40 @@ class TrainingLogger(Callback):
         for cb in getattr(self.model, 'callbacks', []):
             if isinstance(cb, EarlyStopping):
                 early_stopping_epoch = cb.stopped_epoch
+        self.summary.update({
+            "best_epoch": best_epoch,
+            "best_accuracy": max((l.get("val_accuracy", l.get("accuracy", 0)) for l in self.logs), default=None),
+            "train_end_time": end_time.isoformat(),
+        })
+
+        sampled_logs = []
+
+        for i in range(0, len(self.logs), 10):
+            log = self.logs[i]
+            # 소수점 둘째 자리까지 반올림
+            rounded_log = {
+                k: round(v, 2) if isinstance(v, float) else v
+                for k, v in log.items()
+            }
+            sampled_logs.append(rounded_log)
+
+        self.summary["logs_every_10"] = sampled_logs
+
+        relative_path = self.init_info_path
+        absolute_path = os.path.abspath(relative_path)
+        db = SessionLocal()
+
+
+        self.model_db.init_info_path = absolute_path
+
+
+
+        for log_data in self.logs:
+            create_training_log(db=db, model_id=self.model_db.id, log_data=log_data)
+        db.add(self.model_db)  # 이미 세션에 있으면 생략 가능
+        db.commit()
+        db.close()
+
 
         summary = {
             "hyperparameters": self.params_info,
