@@ -12,8 +12,7 @@ from gui.part.results_tab import setup_results_tab
 from framework.keras_ import TrainingLogger
 from database.service.dao import model_crud
 from database.db import SessionLocal
-
-from tuneparam.models import mobilenetv3, lstm ,resnet
+from tuneparam.models import mobilenetv3, lstm, resnet
 
 global X_train, y_train
 global model_type
@@ -110,13 +109,12 @@ def launch_experiment(
     
 def start_retrain(gpt_output):
     global model_type
-    print("뭐노:", model_type)
     if model_type == "MobilenetV3":
-        model, history = mobilenetv3.retrain_mobilenet(X_train, y_train, gpt_output)
+        mobilenetv3.retrain_mobilenet(X_train, y_train, gpt_output)
     elif model_type == "lstm":
-        model, history = lstm.retrain_lstm(X_train, y_train, gpt_output)
-    # elif model_type == "resnet":
-    #     model, history = retrain_resnet(X, y, gpt_output)
+        lstm.retrain_lstm(X_train, y_train, gpt_output)
+    elif model_type == "Resnet":
+        resnet.retrain_resnet(X_train, y_train, gpt_output)
     else:
         raise ValueError(f"지원하지 않는 모델 타입: {model_type}")
 

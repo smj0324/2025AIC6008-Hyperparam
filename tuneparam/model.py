@@ -34,6 +34,14 @@ def faiss_search(query: str, top_k: int = 5):
     # 실제 RAG 검색을 구현할 때 대체
     return f"No specific evidence found for {query}. Using general best practices."
 
+import json
+from typing import Dict, Any, List, Callable
+
+from typing import List, Callable
+
+def make_empty_template(keys: List[str]) -> Dict[str, str]:
+    return {k: "" for k in keys}
+
 def extract_timestamp_from_filename(filepath: str) -> int:
 
     fname = os.path.basename(filepath)
@@ -288,22 +296,38 @@ class HyperparameterOptimizer:
         )
         model_params_schema = self._get_model_specific_params(model_name)
 
-        response = self._query_llm(
-            current_params=current_params,
-            training_results=training_results,
-            model_prompt=model_prompt,
-            dataset_type=dataset_type,
-            goal=goal,
-            model_params_schema=model_params_schema,
-            graph_analysis=graph_analysis
-        )
+        if model_name == 'Resnet':
+            param_keys = list(current_params.keys())
+
+            model_params_schema['recommendations'] = make_empty_template(param_keys)
+            model_params_schema['reasons'] = make_empty_template(param_keys)
+
+            response = self._query_llm(
+                current_params=current_params,
+                training_results=training_results,
+                model_prompt=model_prompt,
+                dataset_type=dataset_type,
+                goal=goal,
+                model_params_schema=model_params_schema,
+                graph_analysis=graph_analysis
+            )
+        else:
+            response = self._query_llm(
+                current_params=current_params,
+                training_results=training_results,
+                model_prompt=model_prompt,
+                dataset_type=dataset_type,
+                goal=goal,
+                model_params_schema=model_params_schema,
+                graph_analysis=graph_analysis
+            )
 
         return response
 
     def _get_model_specific_params(self, model_name: str) -> Optional[Dict[str, Any]]:
 
         schemas = {
-            "ResNet": {
+            "Resnet": {
                 "recommendations": {
                     "optimizer": "",
                     "learning_rate": "",
