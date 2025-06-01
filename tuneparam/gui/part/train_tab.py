@@ -148,12 +148,12 @@ def setup_train_tab(tab_train, log_dir=None, user_data=None, is_dark_theme=False
     setup_initial_param_text(train_state, param_canvas)
     
     # Loss 그래프 설정
-    loss_canvas = tk.Canvas(loss_frame, bg=colors['canvas_bg'], highlightthickness=0, width=290, height=290)
+    loss_canvas = tk.Canvas(loss_frame, bg=colors['canvas_bg'], highlightthickness=0)
     loss_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     setup_loss_graph(loss_canvas, colors)
     
     # Accuracy 그래프 설정
-    acc_canvas = tk.Canvas(acc_frame, bg=colors['canvas_bg'], highlightthickness=0, width=290, height=290)
+    acc_canvas = tk.Canvas(acc_frame, bg=colors['canvas_bg'], highlightthickness=0)
     acc_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     setup_accuracy_graph(acc_canvas, colors)
     
