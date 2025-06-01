@@ -1,10 +1,13 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.datasets import cifar100
+from keras.optimizers.schedules import ExponentialDecay
+from tensorflow.keras.optimizers.legacy import SGD
+
 
 def conv_block(x, filters, kernel_size=3, stride=1):
     x = layers.Conv2D(filters, kernel_size, strides=stride, padding='same', use_bias=False)(x)
@@ -83,12 +86,15 @@ def build_and_compile_model(training_params: dict) -> Model:
     model: Model = get_resnet_model(model_name, input_shape, num_classes)
 
     # 옵티마이저 설정
-    if optimizer_name == 'adam':
+    try:
+        if optimizer_name == 'adam':
+            optimizer = Adam(learning_rate=learning_rate)
+        elif optimizer_name == 'sgd':
+            optimizer = SGD(learning_rate=learning_rate, momentum=momentum, decay=weight_decay)
+        else:
+            raise ValueError(f"Unsupported optimizer: {optimizer_name}")
+    except Exception as e:
         optimizer = Adam(learning_rate=learning_rate)
-    elif optimizer_name == 'sgd':
-        optimizer = SGD(learning_rate=learning_rate, momentum=momentum, decay=weight_decay)
-    else:
-        raise ValueError(f"Unsupported optimizer: {optimizer_name}")
 
     # 손실 함수 설정
     if loss_name == "categorical_crossentropy":
@@ -107,7 +113,7 @@ def test_resnet():
         "model_name": "resnet18",
         "input_shape": (32, 32, 3),
         "num_classes": 100,
-        "epochs": 100,
+        "epochs": 1,
         "batch_size": 64,
         "shuffle": True,
         "verbose": 1,
@@ -142,4 +148,4 @@ def test_resnet():
 
     model = build_and_compile_model(training_params)
 
-    return model, x_test, y_train, training_params
+    return model, x_train, y_train, training_params

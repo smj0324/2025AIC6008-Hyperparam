@@ -12,7 +12,7 @@ from lstm import test_lstm
 from resnet import test_resnet
 
 # model, X_train, y_train, training_params = test_moblinet()
-model, X_train, y_train, training_params = test_lstm()
-# model, X_train, y_train, training_params = test_resnet()
+# model, X_train, y_train, training_params = test_lstm()
+model, X_train, y_train, training_params = test_resnet()
 
-launch_experiment(model, X_train, y_train, training_params=training_params)
+launch_experiment(model, X_train[:100], y_train[:100], training_params=training_params)

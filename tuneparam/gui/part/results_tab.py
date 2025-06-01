@@ -44,12 +44,7 @@ def split_summary_by_keys(summary, keys):
     return included, excluded
 
 def apply_gpt_params(tab_train, logger: TrainingLogger):
-    print("파라미터 추천 시작")
     included, excluded = split_summary_by_keys(logger.summary, logger.params_key)
-    print(included)
-    print(excluded)
-    print(logger.user_data)
-
     optimizer = HyperparameterOptimizer()
 
     recommendations = optimizer.recommend_params(
