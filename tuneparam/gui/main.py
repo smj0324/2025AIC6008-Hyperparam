@@ -12,8 +12,7 @@ from gui.part.results_tab import setup_results_tab
 from framework.keras_ import TrainingLogger
 from database.service.dao import model_crud
 from database.db import SessionLocal
-
-from tuneparam.models import mobilenetv3, lstm ,resnet
+from tuneparam.models import mobilenetv3, lstm, resnet
 
 global X_train, y_train
 global model_type
