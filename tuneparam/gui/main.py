@@ -114,7 +114,7 @@ def start_retrain(gpt_output):
         mobilenetv3.retrain_mobilenet(X_train, y_train, gpt_output)
     elif model_type == "lstm":
         lstm.retrain_lstm(X_train, y_train, gpt_output)
-    elif model_type == "resnet":
+    elif model_type == "Resnet":
         resnet.retrain_resnet(X_train, y_train, gpt_output)
     else:
         raise ValueError(f"지원하지 않는 모델 타입: {model_type}")
