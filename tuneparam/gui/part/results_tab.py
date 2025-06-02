@@ -2,7 +2,7 @@ from tuneparam.framework.keras_ import TrainingLogger
 import tkinter as tk
 from tkinter import ttk
 from operator import itemgetter
-import json
+import os 
 import threading
 from tkinter import scrolledtext
 from tuneparam.model import HyperparameterOptimizer
@@ -46,13 +46,21 @@ def split_summary_by_keys(summary, keys):
 def apply_gpt_params(tab_train, logger: TrainingLogger):
     included, excluded = split_summary_by_keys(logger.summary, logger.params_key)
     optimizer = HyperparameterOptimizer()
-
+    
+    log_dir = logger.user_data.get('Log Dir', os.environ.get("TP_LOG_DIR", "logs"))
+    graph_analysis = optimizer.analyze_training_graphs(
+    log_dir=log_dir,
+    current_params=included,
+    training_results=excluded,
+    model_name=logger.user_data['Model Type']
+    )
     recommendations = optimizer.recommend_params(
         current_params=included,
         training_results=excluded,
         model_name=logger.user_data['Model Type'],
         dataset_type=logger.user_data['Dataset Type'],
-        goal=logger.user_data['Goal']
+        goal=logger.user_data['Goal'],
+        graph_analysis=graph_analysis
     )
     return recommendations
 

@@ -30,6 +30,7 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_LLM_MODEL = os.environ.get("OPENAI_LLM_MODEL", "gpt-4o-mini")
 OPENAI_VISION_MODEL = os.environ.get("OPENAI_VISION_MODEL", "gpt-4o")
 
+
 def make_empty_template(keys: List[str]) -> Dict[str, str]:
     return {k: "" for k in keys}
 
@@ -412,110 +413,30 @@ class HyperparameterOptimizer:
             },
             "LSTM": {
                 "recommendations": {
+                    "hidden_size": "",
+                    "dropout": "",
+                    "recurrent_dropout": "",
+                    "num_layers": "",
+                    "bidirectional": "",
+                    "dense_dropout": "",
                     "optimizer": "",
                     "learning_rate": "",
                     "batch_size": "",
                     "epochs": "",
-                    "dropout": "",
-                    "hidden_size": "",
-                    "num_layers": "",
-                    "sequence_length": "",
-                    "bidirectional": "",
-                    "gradient_clipping": "",
-                    "embedding_dim": "",
-                    "tagging_scheme": "",
-                    "output_classifier": "",
-                    "early_stopping_patience": "",
-                    "recurrent_dropout": "",
-                    "return_sequences": "",
-                    "activation": "",
-                    "recurrent_activation": "",
-                    "use_bias": "",
-                    "kernel_initializer": "",
-                    "recurrent_initializer": "",
-                    "bias_initializer": "",
-                    "unit_forget_bias": "",
-                    "kernel_regularizer": "",
-                    "recurrent_regularizer": "",
-                    "bias_regularizer": "",
-                    "activity_regularizer": "",
-                    "kernel_constraint": "",
-                    "recurrent_constraint": "",
-                    "bias_constraint": "",
-                    "implementation": "",
-                    "go_backwards": "",
-                    "stateful": "",
-                    "time_major": "",
-                    "unroll": "",
-                    "dense_dropout": "",
-                    "verbose": "",
-                    "callbacks": "",
                     "validation_split": "",
-                    "validation_data": "",
-                    "shuffle": "",
-                    "class_weight": "",
-                    "sample_weight": "",
-                    "initial_epoch": "",
-                    "steps_per_epoch": "",
-                    "validation_steps": "",
-                    "validation_batch_size": "",
-                    "validation_freq": "",
-                    "max_queue_size": "",
-                    "workers": "",
-                    "use_multiprocessing": ""
                 },
                 "reasons": {
+                    "hidden_size": "",
+                    "dropout": "",
+                    "recurrent_dropout": "",
+                    "num_layers": "",
+                    "bidirectional": "",
+                    "dense_dropout": "",
                     "optimizer": "",
                     "learning_rate": "",
                     "batch_size": "",
                     "epochs": "",
-                    "dropout": "",
-                    "hidden_size": "",
-                    "num_layers": "",
-                    "sequence_length": "",
-                    "bidirectional": "",
-                    "gradient_clipping": "",
-                    "embedding_dim": "",
-                    "tagging_scheme": "",
-                    "output_classifier": "",
-                    "early_stopping_patience": "",
-                    "recurrent_dropout": "",
-                    "return_sequences": "",
-                    "activation": "",
-                    "recurrent_activation": "",
-                    "use_bias": "",
-                    "kernel_initializer": "",
-                    "recurrent_initializer": "",
-                    "bias_initializer": "",
-                    "unit_forget_bias": "",
-                    "kernel_regularizer": "",
-                    "recurrent_regularizer": "",
-                    "bias_regularizer": "",
-                    "activity_regularizer": "",
-                    "kernel_constraint": "",
-                    "recurrent_constraint": "",
-                    "bias_constraint": "",
-                    "implementation": "",
-                    "go_backwards": "",
-                    "stateful": "",
-                    "time_major": "",
-                    "unroll": "",
-                    "dense_dropout": "",
-                    "verbose": "",
-                    "callbacks": "",
                     "validation_split": "",
-                    "validation_data": "",
-                    "shuffle": "",
-                    "class_weight": "",
-                    "sample_weight": "",
-                    "initial_epoch": "",
-                    "steps_per_epoch": "",
-                    "validation_steps": "",
-                    "validation_batch_size": "",
-                    "validation_freq": "",
-                    "max_queue_size": "",
-                    "workers": "",
-                    "use_multiprocessing": ""
                 },
                 "expected_improvement": ""
             }
@@ -604,6 +525,7 @@ class HyperparameterOptimizer:
                 f"{graph_analysis}\n\n"
                 "Please ensure your recommendations directly address the issues identified in the graph analysis."
             )
+        print(f"\n\n\n\n\***************\ngraph_analysis:\n{graph_analysis}\n")
 
         try:
             response = self.client.chat.completions.create(
@@ -686,6 +608,7 @@ class HyperparameterOptimizer:
         user_messages.extend(image_contents)
 
         try:
+            print(f"[DEBUG] image_contents: {image_contents}")
             response = self.client.chat.completions.create(
                 model=OPENAI_VISION_MODEL,
                 messages=[
@@ -695,8 +618,11 @@ class HyperparameterOptimizer:
                 max_tokens=2000,
                 temperature=0.3
             )
-            return response.choices[0].message.content
-        except Exception:
+            content = response.choices[0].message.content
+            print(f"[DEBUG] Graph Analysis Content: {content}")
+            return content
+        except Exception as e:
+            print(f"[ERROR] Graph analysis failed: {e}")
             return self._analyze_without_graphs(current_params, training_results, model_name)
 
     def analyze_and_recommend_from_log(
