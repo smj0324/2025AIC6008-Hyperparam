@@ -9,7 +9,7 @@ from tuneparam.gui.main import launch_experiment
 from mobilenet import test_moblinet
 from random_search.mobilenet import start_moblinet_random_search
 from lstm import test_lstm
-from tuneparam.models import test_resnet
+from tuneparam.models import test_resnet, test_grid_search_resnet
 from tuneparam.database import table_create, dump_test
 
 db_path = os.path.join(os.path.dirname(__file__), '..', 'tuneparam', 'my_database.db')
@@ -41,6 +41,7 @@ mv_base_model_params = {
 # model, X_train, y_train, training_params = test_moblinet(mv_base_model_params)
 # model, X_train, y_train, training_params = test_lstm()
 # model, X_train, y_train, training_params = test_resnet()
+model, X_train, y_train, training_params = test_grid_search_resnet()
 
-model, X_train, y_train, training_params = start_moblinet_random_search(mv_base_model_params)
+# model, X_train, y_train, training_params = start_moblinet_random_search(mv_base_model_params)
 launch_experiment(model, X_train, y_train, training_params=training_params)
