@@ -191,7 +191,7 @@ def test_resnet():
     return model, x_train, y_train, training_params
 
 
-def test_grid_search_resnet():
+def test_random_search_resnet():
     base_params = {
         "model_size": "resnet50",
         "input_shape": (32, 32, 3),
