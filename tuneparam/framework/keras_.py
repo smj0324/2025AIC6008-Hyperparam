@@ -12,9 +12,20 @@ from tuneparam.database.service.dao import create_training_log
 from tuneparam.database.db import SessionLocal
 
 
-def pretty_print_dict(title, d):
-    print(f"\n{'='*30}\n{title}\n{'='*30}")
-    print(json.dumps(d, ensure_ascii=False, indent=2))
+def make_serializable(obj):
+    """JSON 직렬화가 가능한 형태로 변환해주는 함수"""
+    if isinstance(obj, (int, float, str, bool, type(None))):
+        return obj
+    elif isinstance(obj, (list, tuple)):
+        return [make_serializable(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    else:
+        return str(obj)  # 객체는 문자열로 변환
+
+def pretty_print_dict(name, d):
+    print(f"==== {name} ====")
+    print(json.dumps(make_serializable(d), ensure_ascii=False, indent=2))
 
 def convert_json_serializable(obj):
     if isinstance(obj, dict):
@@ -40,7 +51,7 @@ def convert_json_serializable_key(key):
 
 
 class TrainingLogger(Callback):
-    def __init__(self, log_dir="logs", params=None, summary_params = None, X=None, y=None):
+    def __init__(self, log_dir="logs", params=None, summary_params=None, X=None, y=None):
         super().__init__()
         self.log_dir = log_dir
         os.makedirs(self.log_dir, exist_ok=True)
@@ -51,7 +62,7 @@ class TrainingLogger(Callback):
         self.start_time = None
         self.params_info = params if params else {}
         self.summary = summary_params
-        self.params_key = copy.deepcopy(list(summary_params.keys()))
+        self.params_key = copy.deepcopy(list(summary_params.keys())) if summary_params else []
         self.user_data = {}
         self.model_db = None
 
@@ -81,11 +92,11 @@ class TrainingLogger(Callback):
         }
         now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
         path = os.path.join(self.log_dir, f"init_info_{now_str}.json")
+        # --- 수정된 부분: 직렬화 함수 적용 ---
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(init_info, f, ensure_ascii=False, indent=2)
+            json.dump(make_serializable(init_info), f, ensure_ascii=False, indent=2)
         print(f"✅ 학습 전 초기 정보 저장 완료: {path}")
         return path
-    
 
     def get_preset_data_for_main_tab(self):
         X_shape = self.data_info.get("X_shape", [None])
