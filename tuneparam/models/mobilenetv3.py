@@ -2,7 +2,7 @@ import numpy as np
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.applications import MobileNetV3Small
-from tensorflow.keras.optimizers import Adam, AdamW
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 
 def retrain_mobilenet(X_train_images, y_train_labels, gpt_output):
@@ -37,7 +37,7 @@ def retrain_mobilenet(X_train_images, y_train_labels, gpt_output):
         model = Model(inputs=base_model.input, outputs=predictions)
 
     # ----------- 컴파일 파라미터 -----------
-    optimizer_cls = AdamW if str(rec["optimizer"]).lower() == "adamw" else Adam
+    optimizer_cls = Adam if str(rec["optimizer"]).lower() == "adamw" else Adam
     optimizer = optimizer_cls(learning_rate=rec["learning_rate"])
     loss = 'sparse_categorical_crossentropy'
     metrics = ['accuracy']
