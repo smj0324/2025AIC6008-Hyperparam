@@ -17,7 +17,7 @@ db_path = DATABASE_URL
 print(db_path)
 
 if not os.path.exists(db_path):
-    print(f"Database not found at {db_path}. Creating database...")
+    print(f"Database not found at {db_path} Creating database...")
     table_create.main()
     dump_test.main()
 else:

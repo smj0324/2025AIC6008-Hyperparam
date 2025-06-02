@@ -9,19 +9,22 @@ from sqlalchemy.orm import sessionmaker
 import os
 db_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-user_suffix = 'sg'  # 'sg', 'mj', 'hm' 중 선택
+# 사용할 사용자 suffix 설정 ('sg', 'mj', 'hm' 중 하나)
+user_suffix = 'sg'
 
-# suffix에 따라 파일명 분기
-if user_suffix == 'sg':
-    db_name = 'my_database_sg.db'
-elif user_suffix == 'mj':
-    db_name = 'my_database_mj.db'
-elif user_suffix == 'hm':
-    db_name = 'my_database_hm.db'
-else:
-    raise ValueError(f"Unknown user_suffix: {user_suffix}")
+# 사용자 suffix별 DB 파일명 매핑
+db_name_map = {
+    'sg': 'my_database_sg.db',
+    'mj': 'my_database_mj.db',
+    'hm': 'my_database_hm.db',
+}
 
-# todo 최종 DB 경로 및 SQLAlchemy용 URL 구성
+# DB 파일명 결정 (예외 처리 포함)
+try:
+    db_name = db_name_map[user_suffix]
+except KeyError:
+    raise ValueError(f"Unknown user_suffix: {user_suffix}. Expected one of {list(db_name_map.keys())}")
+
 db_path = os.path.join(db_dir, db_name)
 DATABASE_URL = f"sqlite:///{db_path}"
 
