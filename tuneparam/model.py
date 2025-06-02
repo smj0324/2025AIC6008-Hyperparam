@@ -267,7 +267,23 @@ class HyperparameterOptimizer:
     def __init__(self):
         self.client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
     def _analyze_without_graphs(self, current_params, training_results, model_name):
-        return ""
+        """Fallback analysis when graphs are not available"""
+        metrics_analysis = []
+        
+        if 'accuracy' in training_results and 'val_accuracy' in training_results:
+            acc_diff = abs(training_results['accuracy'] - training_results['val_accuracy'])
+            if acc_diff > 0.1:
+                metrics_analysis.append("There appears to be a significant gap between training and validation accuracy, suggesting potential overfitting.")
+            
+        if 'loss' in training_results and 'val_loss' in training_results:
+            loss_diff = abs(training_results['loss'] - training_results['val_loss'])
+            if loss_diff > 0.3:
+                metrics_analysis.append("The difference between training and validation loss indicates room for optimization.")
+                
+        if not metrics_analysis:
+            metrics_analysis.append("Based on current metrics, the model appears to be training normally but may benefit from further optimization.")
+            
+        return " ".join(metrics_analysis)
 
     def analyze_training_graphs(
         self,
@@ -280,67 +296,68 @@ class HyperparameterOptimizer:
         if not self.client:
             return self._analyze_without_graphs(current_params, training_results, model_name)
 
-        plot_and_save_training_graphs(
-            log_dir,
-            save_dir=os.path.join(log_dir, TRAINING_GRAPH_DIRNAME)
-        )
-
-        graph_files = find_latest_graph_files(log_dir, max_retries=5, retry_delay=1.0)
-        if not graph_files:
+        # 1. 먼저 그래프 생성 (또는 최신 그래프 찾기)
+        loss_png, acc_png = plot_and_save_training_graphs(log_dir)
+        if not loss_png and not acc_png:
+            print("[WARNING] No graphs found or could not be generated")
             return self._analyze_without_graphs(current_params, training_results, model_name)
 
+        # 2. 이미지를 base64로 인코딩
         image_contents = []
-        for graph_name, graph_path in graph_files:
-            try:
-                img_b64 = encode_image(graph_path)
-                image_contents.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/png;base64,{img_b64}"}
-                })
-            except Exception:
-                continue
+        for graph_path in [loss_png, acc_png]:
+            if graph_path and os.path.exists(graph_path):
+                try:
+                    img_b64 = encode_image(graph_path)
+                    image_contents.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{img_b64}"}
+                    })
+                except Exception as e:
+                    print(f"[ERROR] Failed to encode image {graph_path}: {e}")
+                    continue
 
         if not image_contents:
+            print("[WARNING] No valid graph images could be encoded")
             return self._analyze_without_graphs(current_params, training_results, model_name)
 
-        system_prompt = (
-            "You are a deep learning expert. Analyze the training graphs and provide detailed diagnostic insights and actionable recommendations."
-        )
+        # 3. GPT-4 Vision에 분석 요청
+        system_prompt = """You are a deep learning expert. Analyze the training graphs and provide detailed diagnostic insights.
+        Focus on:
+        1. Training/validation loss patterns and potential overfitting
+        2. Learning curve stability and convergence
+        3. Training efficiency and potential early stopping needs
+        4. Specific recommendations for hyperparameter adjustments
+        
+        Provide a concise but thorough analysis."""
+
         user_messages = [
             {
                 "type": "text",
-                "text": (
-                    f"Here are the training graphs for the {model_name} model.\n"
-                    f"Current hyperparameters:\n{json.dumps(current_params, indent=2, ensure_ascii=False)}\n\n"
-                    f"Training results:\n{json.dumps(training_results, indent=2, ensure_ascii=False)}\n\n"
-                    "Please analyze the graphs to diagnose the state of your training and suggest improvements:\n"
-                    "- Training/validation loss interval (overfitting 여부)\n"
-                    "- Stability of the learning curve\n"
-                    "- Speed and pattern of convergence\n"
-                    "- Need for early stopping\n"
-                    "- Direction of hyperparameter tuning\n\n"
-                    "Provide specific and actionable suggestions."
-                )
+                "text": f"""Analyze these training graphs for the {model_name} model.
+                Current metrics: {json.dumps(training_results, indent=2)}
+                Current parameters: {json.dumps(current_params, indent=2)}
+                
+                What patterns do you observe? What improvements would you suggest?"""
             }
         ]
         user_messages.extend(image_contents)
 
         try:
-            print(f"[DEBUG] image_contents: {image_contents}")
+            print(f"[DEBUG] Sending request to Vision model with {len(image_contents)} images")
             response = self.client.chat.completions.create(
                 model=OPENAI_VISION_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_messages}
                 ],
-                max_tokens=2000,
+                max_tokens=1000,
                 temperature=0.3
             )
-            content = response.choices[0].message.content
-            print(f"[DEBUG] Graph Analysis Content: {content}")
-            return content
+            analysis = response.choices[0].message.content
+            print(f"[DEBUG] Received graph analysis: {analysis}")
+            return analysis
         except Exception as e:
-            print(f"[ERROR] Graph analysis failed: {e}")
+            print(f"[ERROR] Vision model analysis failed: {e}")
             return self._analyze_without_graphs(current_params, training_results, model_name)
 
     def recommend_params(
@@ -363,6 +380,10 @@ class HyperparameterOptimizer:
             model_name, current_params, dataset_type, goal, rag_evidence
         )
         model_params_schema = self._get_model_specific_params(model_name)
+
+        # Add graph analysis to the context if available
+        if graph_analysis:
+            print("Using graph analysis in recommendations:", graph_analysis)
 
         if model_name == 'Resnet':
             param_keys = list(current_params.keys())

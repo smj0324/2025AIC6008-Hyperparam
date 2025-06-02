@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from operator import itemgetter
 import os 
+import glob
 import threading
 from tkinter import scrolledtext
 from tuneparam.model import HyperparameterOptimizer
@@ -48,20 +49,59 @@ def apply_gpt_params(tab_train, logger: TrainingLogger):
     optimizer = HyperparameterOptimizer()
     
     log_dir = logger.user_data.get('Log Dir', os.environ.get("TP_LOG_DIR", "logs"))
+    if os.path.isdir(log_dir):
+        subdirs = [d for d in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, d))]
+        if subdirs:
+            def extract_ts_from_dir(dirname: str) -> str:
+                parts = dirname.split("_")
+                return "_".join(parts[-2:]) if len(parts) >= 3 else dirname
+
+            sorted_subdirs = sorted(subdirs, key=extract_ts_from_dir, reverse=True)
+
+            actual_log_dir = None
+            for subdir in sorted_subdirs:
+                test_dir = os.path.join(log_dir, subdir)
+                graph_folder = os.path.join(test_dir, "training_graphs")
+                if os.path.isdir(graph_folder):
+                    png_files = glob.glob(os.path.join(graph_folder, "*graph*.png"))
+                else:
+                    png_files = glob.glob(os.path.join(test_dir, "*graph*.png"))
+                if png_files:
+                    actual_log_dir = test_dir
+                    break
+
+            if actual_log_dir is None:
+                actual_log_dir = os.path.join(log_dir, sorted_subdirs[0])
+        else:
+            actual_log_dir = log_dir
+    else:
+        actual_log_dir = log_dir
+
+    # 1. 그래프 분석 수행
     graph_analysis = optimizer.analyze_training_graphs(
-    log_dir=log_dir,
-    current_params=included,
-    training_results=excluded,
-    model_name=logger.user_data['Model Type']
+        log_dir=actual_log_dir,
+        current_params=included,
+        training_results=excluded,
+        model_name=logger.user_data['Model Type']
     )
+    
+    if not graph_analysis:
+        print("Warning: Graph analysis failed or returned empty result")
+        graph_analysis = ""
+
+    # 2. 하이퍼파라미터 추천 (graph_analysis 결과를 포함하여 전달)
     recommendations = optimizer.recommend_params(
         current_params=included,
         training_results=excluded,
         model_name=logger.user_data['Model Type'],
         dataset_type=logger.user_data['Dataset Type'],
         goal=logger.user_data['Goal'],
-        graph_analysis=graph_analysis
+        graph_analysis=graph_analysis  # 그래프 분석 결과를 명시적으로 전달
     )
+    
+    print("Graph Analysis:", graph_analysis)  # 디버깅용
+    print("Recommendations:", recommendations)  # 디버깅용
+    
     return recommendations
 
 # === 테마 일괄 적용 ===
