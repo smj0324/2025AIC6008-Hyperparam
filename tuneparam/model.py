@@ -459,6 +459,11 @@ class HyperparameterOptimizer:
             1. Balance between batch size and memory usage for mobile environments
             2. Learning rate's impact on convergence and accuracy
             3. Optimization goal: {goal}
+
+            [※주의]
+            minimalistic=True일 때 alpha는 1.0만 허용,
+            minimalistic=False일 때 alpha는 0.75 또는 1.0만 허용,
+            다른 alpha값을 값을 사용하고 싶다면 weights=None으로 설정 (사전학습 없이 랜덤 초기화)
             """,
             "LSTM": f"""
             LSTM model optimization for {dataset_type} dataset.
