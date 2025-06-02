@@ -21,7 +21,7 @@ elif user_suffix == 'hm':
 else:
     raise ValueError(f"Unknown user_suffix: {user_suffix}")
 
-# 최종 DB 경로 및 SQLAlchemy용 URL 구성
+# todo 최종 DB 경로 및 SQLAlchemy용 URL 구성
 db_path = os.path.join(db_dir, db_name)
 DATABASE_URL = f"sqlite:///{db_path}"
 

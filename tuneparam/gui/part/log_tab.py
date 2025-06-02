@@ -6,6 +6,7 @@ import glob
 import threading
 import time
 
+from matplotlib.figure import Figure
 from tuneparam.gui.theme.fonts import DEFAULT_FONT, ERROR_FONT_SMALL
 from tuneparam.database.db import SessionLocal
 from tuneparam.database.service.dao import user_crud, create_training_log, get_all_models, get_model_by_version_and_type
@@ -72,13 +73,19 @@ def setup_log_tab(tab_train, log_dir=None):
     main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     left_frame = ttk.LabelFrame(main_frame, text="Training Parameters")
-    left_frame.pack(side='left', fill='both', expand=True, padx=(0, 10))
+    left_frame.pack(side='left', fill='both', expand=False, padx=(0, 10))  # 줄어들도록 설정
 
     right_frame = ttk.LabelFrame(main_frame, text="Training Log")
     right_frame.pack(side='left', fill='both', expand=True)
 
-    # 하이퍼파라미터 표시용 텍스트박스
-    params_text = ScrolledText(left_frame, height=20, wrap='word')
+    # 하이퍼파라미터 표시용 텍스트박스 (작은 높이, 너비, 글꼴)
+    params_text = ScrolledText(
+        left_frame,
+        height=10,          # 높이 줄임
+        width=50,           # 폭 고정
+        wrap='word',
+        font=("Helvetica", 9)  # 글꼴 작게
+    )
     params_text.pack(fill='both', expand=True)
 
     def display_params_from_json(json_path):
@@ -112,29 +119,35 @@ def setup_log_tab(tab_train, log_dir=None):
         train_acc = [log.accuracy for log in logs]
         val_acc = [log.val_accuracy for log in logs]
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
+        # 기존 그래프 제거 (중복 방지)
+        for widget in right_frame.winfo_children():
+            widget.destroy()
 
-        ax1.plot(epochs, train_loss, label="Train Loss", color='blue')
-        ax1.plot(epochs, val_loss, label="Val Loss", color='orange')
-        ax1.set_ylabel("Loss")
-        ax1.set_title("Training & Validation Loss")
-        ax1.legend()
-        ax1.grid(True)
+        # 반응형 레이아웃 + 개선된 스타일
+        fig = Figure(figsize=(6, 4), dpi=100, constrained_layout=True)
 
-        ax2.plot(epochs, train_acc, label="Train Accuracy", color='green')
-        ax2.plot(epochs, val_acc, label="Val Accuracy", color='red')
-        ax2.set_xlabel("Epoch")
-        ax2.set_ylabel("Accuracy")
-        ax2.set_title("Training & Validation Accuracy")
-        ax2.legend()
-        ax2.grid(True)
+        ax1 = fig.add_subplot(211)
+        ax1.plot(epochs, train_loss, label="Train Loss", color='#1f77b4', linewidth=2)
+        ax1.plot(epochs, val_loss, label="Val Loss", color='#ff7f0e', linestyle='--', linewidth=2)
+        ax1.set_ylabel("Loss", fontsize=10)
+        ax1.set_title("Training & Validation Loss", fontsize=12, weight='bold')
+        ax1.legend(fontsize=8)
+        ax1.grid(True, linestyle=':', linewidth=0.5)
 
-        fig.tight_layout()
+        ax2 = fig.add_subplot(212)
+        ax2.plot(epochs, train_acc, label="Train Accuracy", color='#2ca02c', linewidth=2)
+        ax2.plot(epochs, val_acc, label="Val Accuracy", color='#d62728', linestyle='--', linewidth=2)
+        ax2.set_xlabel("Epoch", fontsize=10)
+        ax2.set_ylabel("Accuracy", fontsize=10)
+        ax2.set_title("Training & Validation Accuracy", fontsize=12, weight='bold')
+        ax2.legend(fontsize=8)
+        ax2.grid(True, linestyle=':', linewidth=0.5)
 
+        # tkinter에 그래프 표시
         canvas = FigureCanvasTkAgg(fig, master=right_frame)
         canvas.draw()
-        canvas.get_tk_widget().pack(fill='both', expand=True)
-
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.pack(fill='both', expand=True)
     def load_logs_and_draw(model_type, version):
         db = SessionLocal()
         model = get_model_by_version_and_type(db=db, model_type=model_type, version=version)
