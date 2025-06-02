@@ -11,10 +11,9 @@ from lstm import test_lstm
 
 from tuneparam.models import test_resnet
 from tuneparam.database import table_create, dump_test
-from tuneparam.database.db import DATABASE_URL
+from tuneparam.database.db import DATABASE_URL_ORIGIN
 
-db_path = DATABASE_URL
-print(db_path)
+db_path = DATABASE_URL_ORIGIN
 
 if not os.path.exists(db_path):
     print(f"Database not found at {db_path} Creating database...")

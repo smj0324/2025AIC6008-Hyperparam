@@ -25,8 +25,8 @@ try:
 except KeyError:
     raise ValueError(f"Unknown user_suffix: {user_suffix}. Expected one of {list(db_name_map.keys())}")
 
-db_path = os.path.join(db_dir, db_name)
-DATABASE_URL = f"sqlite:///{db_path}"
+DATABASE_URL_ORIGIN = os.path.join(db_dir, db_name)
+DATABASE_URL = f"sqlite:///{DATABASE_URL_ORIGIN}"
 
 print("DATABASE_URL:", DATABASE_URL)
 
