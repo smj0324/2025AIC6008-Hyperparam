@@ -51,7 +51,7 @@ def launch_experiment(
     # 탭 초기 설정
     train_handlers = setup_train_tab(tab_train)
     results_handlers = setup_results_tab(tab_results, train_parameters=summary_params, preset_logger =_preset_logger)
-    setup_log_tab(tab_logs)
+    logs_handlers = setup_log_tab(tab_logs)
 
     # 테마 변경 핸들러
     def handle_theme_change(theme_name):
@@ -61,6 +61,8 @@ def launch_experiment(
             train_handlers["update_theme"](is_dark)
         if results_handlers and "update_theme" in results_handlers:
             results_handlers["update_theme"](is_dark)
+        if logs_handlers and "update_theme" in logs_handlers:
+            logs_handlers["update_theme"](is_dark)
 
     theme_frame = create_theme_buttons(root, handle_theme_change)
     theme_frame.grid(row=0, column=1, sticky="ne", padx=(0, 10), pady=(10, 0))

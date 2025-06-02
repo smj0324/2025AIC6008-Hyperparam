@@ -10,7 +10,7 @@ import os
 db_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # 사용할 사용자 suffix 설정 ('sg', 'mj', 'hm' 중 하나)
-user_suffix = 'mj'
+user_suffix = 'sg'
 
 # 사용자 suffix별 DB 파일명 매핑
 db_name_map = {

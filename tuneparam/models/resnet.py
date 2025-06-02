@@ -3,7 +3,7 @@ import os
 from gui.main import launch_experiment
 
 import tensorflow as tf
-from tensorflow.keras import layers, Model
+from tensorflow.keras import layers
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import CategoricalCrossentropy
@@ -113,10 +113,10 @@ def build_and_compile_model(training_params: dict) -> Model:
 
 def test_resnet():
     training_params = {
-        "model_name": "resnet18",
+        "model_size": "resnet18",
         "input_shape": (32, 32, 3),
         "num_classes": 100,
-        "epochs": 1,
+        "epochs": 20,
         "batch_size": 64,
         "shuffle": True,
         "verbose": 1,
@@ -128,7 +128,7 @@ def test_resnet():
         "use_multiprocessing": False,
 
         "optimizer": "adam",
-        "learning_rate": 0.001,
+        "learning_rate": 0.1,
         "weight_decay": 1e-4,
         "momentum": 0.9,
         "dropout_rate": 0.0,
