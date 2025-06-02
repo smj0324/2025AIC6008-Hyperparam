@@ -419,7 +419,6 @@ class HyperparameterOptimizer:
                     "num_layers": "",
                     "bidirectional": "",
                     "dense_dropout": "",
-    
                     "optimizer": "",
                     "learning_rate": "",
                     "batch_size": "",
@@ -433,7 +432,6 @@ class HyperparameterOptimizer:
                     "num_layers": "",
                     "bidirectional": "",
                     "dense_dropout": "",
-    
                     "optimizer": "",
                     "learning_rate": "",
                     "batch_size": "",
@@ -527,6 +525,7 @@ class HyperparameterOptimizer:
                 f"{graph_analysis}\n\n"
                 "Please ensure your recommendations directly address the issues identified in the graph analysis."
             )
+        print(f"\n\n\n\n\***************\ngraph_analysis:\n{graph_analysis}\n")
 
         try:
             response = self.client.chat.completions.create(
@@ -609,6 +608,7 @@ class HyperparameterOptimizer:
         user_messages.extend(image_contents)
 
         try:
+            print(f"[DEBUG] image_contents: {image_contents}")
             response = self.client.chat.completions.create(
                 model=OPENAI_VISION_MODEL,
                 messages=[
@@ -618,8 +618,11 @@ class HyperparameterOptimizer:
                 max_tokens=2000,
                 temperature=0.3
             )
-            return response.choices[0].message.content
-        except Exception:
+            content = response.choices[0].message.content
+            print(f"[DEBUG] Graph Analysis Content: {content}")
+            return content
+        except Exception as e:
+            print(f"[ERROR] Graph analysis failed: {e}")
             return self._analyze_without_graphs(current_params, training_results, model_name)
 
     def analyze_and_recommend_from_log(
