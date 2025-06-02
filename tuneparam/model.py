@@ -266,6 +266,82 @@ class HyperparameterOptimizer:
 
     def __init__(self):
         self.client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+    def _analyze_without_graphs(self, current_params, training_results, model_name):
+        return ""
+
+    def analyze_training_graphs(
+        self,
+        log_dir: str,
+        current_params: Dict[str, Any],
+        training_results: Dict[str, float],
+        model_name: str
+    ) -> str:
+
+        if not self.client:
+            return self._analyze_without_graphs(current_params, training_results, model_name)
+
+        plot_and_save_training_graphs(
+            log_dir,
+            save_dir=os.path.join(log_dir, TRAINING_GRAPH_DIRNAME)
+        )
+
+        graph_files = find_latest_graph_files(log_dir, max_retries=5, retry_delay=1.0)
+        if not graph_files:
+            return self._analyze_without_graphs(current_params, training_results, model_name)
+
+        image_contents = []
+        for graph_name, graph_path in graph_files:
+            try:
+                img_b64 = encode_image(graph_path)
+                image_contents.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{img_b64}"}
+                })
+            except Exception:
+                continue
+
+        if not image_contents:
+            return self._analyze_without_graphs(current_params, training_results, model_name)
+
+        system_prompt = (
+            "You are a deep learning expert. Analyze the training graphs and provide detailed diagnostic insights and actionable recommendations."
+        )
+        user_messages = [
+            {
+                "type": "text",
+                "text": (
+                    f"Here are the training graphs for the {model_name} model.\n"
+                    f"Current hyperparameters:\n{json.dumps(current_params, indent=2, ensure_ascii=False)}\n\n"
+                    f"Training results:\n{json.dumps(training_results, indent=2, ensure_ascii=False)}\n\n"
+                    "Please analyze the graphs to diagnose the state of your training and suggest improvements:\n"
+                    "- Training/validation loss interval (overfitting 여부)\n"
+                    "- Stability of the learning curve\n"
+                    "- Speed and pattern of convergence\n"
+                    "- Need for early stopping\n"
+                    "- Direction of hyperparameter tuning\n\n"
+                    "Provide specific and actionable suggestions."
+                )
+            }
+        ]
+        user_messages.extend(image_contents)
+
+        try:
+            print(f"[DEBUG] image_contents: {image_contents}")
+            response = self.client.chat.completions.create(
+                model=OPENAI_VISION_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_messages}
+                ],
+                max_tokens=2000,
+                temperature=0.3
+            )
+            content = response.choices[0].message.content
+            print(f"[DEBUG] Graph Analysis Content: {content}")
+            return content
+        except Exception as e:
+            print(f"[ERROR] Graph analysis failed: {e}")
+            return self._analyze_without_graphs(current_params, training_results, model_name)
 
     def recommend_params(
         self,
@@ -552,83 +628,6 @@ class HyperparameterOptimizer:
         except Exception as e:
             print(f"LLM query error: {e}")
             return None
-
-    def _analyze_without_graphs(self, current_params, training_results, model_name):
-        return ""
-
-    def analyze_training_graphs(
-        self,
-        log_dir: str,
-        current_params: Dict[str, Any],
-        training_results: Dict[str, float],
-        model_name: str
-    ) -> str:
-
-        if not self.client:
-            return self._analyze_without_graphs(current_params, training_results, model_name)
-
-        plot_and_save_training_graphs(
-            log_dir,
-            save_dir=os.path.join(log_dir, TRAINING_GRAPH_DIRNAME)
-        )
-
-        graph_files = find_latest_graph_files(log_dir, max_retries=5, retry_delay=1.0)
-        if not graph_files:
-            return self._analyze_without_graphs(current_params, training_results, model_name)
-
-        image_contents = []
-        for graph_name, graph_path in graph_files:
-            try:
-                img_b64 = encode_image(graph_path)
-                image_contents.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/png;base64,{img_b64}"}
-                })
-            except Exception:
-                continue
-
-        if not image_contents:
-            return self._analyze_without_graphs(current_params, training_results, model_name)
-
-        system_prompt = (
-            "You are a deep learning expert. Analyze the training graphs and provide detailed diagnostic insights and actionable recommendations."
-        )
-        user_messages = [
-            {
-                "type": "text",
-                "text": (
-                    f"Here are the training graphs for the {model_name} model.\n"
-                    f"Current hyperparameters:\n{json.dumps(current_params, indent=2, ensure_ascii=False)}\n\n"
-                    f"Training results:\n{json.dumps(training_results, indent=2, ensure_ascii=False)}\n\n"
-                    "Please analyze the graphs to diagnose the state of your training and suggest improvements:\n"
-                    "- Training/validation loss interval (overfitting 여부)\n"
-                    "- Stability of the learning curve\n"
-                    "- Speed and pattern of convergence\n"
-                    "- Need for early stopping\n"
-                    "- Direction of hyperparameter tuning\n\n"
-                    "Provide specific and actionable suggestions."
-                )
-            }
-        ]
-        user_messages.extend(image_contents)
-
-        try:
-            print(f"[DEBUG] image_contents: {image_contents}")
-            response = self.client.chat.completions.create(
-                model=OPENAI_VISION_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_messages}
-                ],
-                max_tokens=2000,
-                temperature=0.3
-            )
-            content = response.choices[0].message.content
-            print(f"[DEBUG] Graph Analysis Content: {content}")
-            return content
-        except Exception as e:
-            print(f"[ERROR] Graph analysis failed: {e}")
-            return self._analyze_without_graphs(current_params, training_results, model_name)
 
     def analyze_and_recommend_from_log(
         self,
