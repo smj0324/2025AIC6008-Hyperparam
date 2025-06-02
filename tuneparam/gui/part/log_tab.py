@@ -14,7 +14,7 @@ from tuneparam.database.schema import Model, User
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter.scrolledtext import ScrolledText
-
+import matplotlib.ticker as ticker
 
 # 그래프용 작은 폰트 정의
 GRAPH_FONT = ('Helvetica', 8)
@@ -163,6 +163,7 @@ def setup_log_tab(tab_train, log_dir=None, is_dark_theme=False):
         fig = Figure(figsize=(6, 4), dpi=100, constrained_layout=True, facecolor=bg_color)
 
         # Loss subplot
+
         ax1 = fig.add_subplot(211, facecolor=bg_color)
         ax1.plot(epochs_display, train_loss, label="Train Loss", color=train_loss_color, linewidth=2, marker='o')
         ax1.plot(epochs_display, val_loss, label="Val Loss", color=val_loss_color, linestyle='--', linewidth=2,
@@ -172,11 +173,7 @@ def setup_log_tab(tab_train, log_dir=None, is_dark_theme=False):
         ax1.legend(fontsize=8, facecolor=legend_facecolor, edgecolor=legend_edgecolor, labelcolor=legend_label_color)
         ax1.grid(True, linestyle=':', linewidth=0.5, color=grid_color)
         ax1.tick_params(colors=axis_color)
-        ax1.set_xlim(0.5, max(epochs_display) + 0.5)
-        ax1.set_xticks(range(1, max(epochs_display) + 1))
-        ax1.margins(x=0, y=0.1)
 
-        # Accuracy subplot
         ax2 = fig.add_subplot(212, facecolor=bg_color)
         ax2.plot(epochs_display, train_acc, label="Train Accuracy", color=train_acc_color, linewidth=2, marker='o')
         ax2.plot(epochs_display, val_acc, label="Val Accuracy", color=val_acc_color, linestyle='--', linewidth=2,
@@ -187,9 +184,10 @@ def setup_log_tab(tab_train, log_dir=None, is_dark_theme=False):
         ax2.legend(fontsize=8, facecolor=legend_facecolor, edgecolor=legend_edgecolor, labelcolor=legend_label_color)
         ax2.grid(True, linestyle=':', linewidth=0.5, color=grid_color)
         ax2.tick_params(colors=axis_color)
-        ax2.set_xlim(0.5, max(epochs_display) + 0.5)
-        ax2.set_xticks(range(1, max(epochs_display) + 1))
-        ax2.margins(x=0, y=0.1)
+
+        if max(epochs_display) == 1:
+            ax1.set_xticks([1])
+            ax2.set_xticks([1])
 
         # tkinter에 그래프 표시
         canvas = FigureCanvasTkAgg(fig, master=right_frame)
