@@ -1,29 +1,46 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import sys, os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-import numpy as np
+import tensorflow as tf
+
 from tuneparam.gui.main import launch_experiment
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Dense
 from mobilenet import test_moblinet
+from random_search.mobilenet import start_moblinet_random_search
 from lstm import test_lstm
-
 from tuneparam.models import test_resnet
 from tuneparam.database import table_create, dump_test
-from tuneparam.database.db import DATABASE_URL_ORIGIN
 
-db_path = DATABASE_URL_ORIGIN
+db_path = os.path.join(os.path.dirname(__file__), '..', 'tuneparam', 'my_database.db')
 
 if not os.path.exists(db_path):
-    print(f"Database not found at {db_path} Creating database...")
+    print("Database not found. Creating database...")
     table_create.main()
     dump_test.main()
 else:
-    print(f"Database found at {db_path}.")
-#
-# model, X_train, y_train, training_params = test_moblinet()
-# model, X_train, y_train, training_params = test_lstm()
-model, X_train, y_train, training_params = test_resnet()
+    print("Database found.")
 
-launch_experiment(model, X_train[:50], y_train[:50], training_params=training_params)
+
+import tensorflow as tf
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+print(tf.config.list_physical_devices('GPU'))
+
+mv_base_model_params = {
+    "input_shape": (224, 224, 3),
+    "alpha": 1.0,           
+    "minimalistic": True,
+    "include_top": False,
+    "weights": "imagenet",
+    "input_tensor": None,
+    "pooling": "avg",
+    "classifier_activation": "softmax",
+    "include_preprocessing": True
+}
+
+# model, X_train, y_train, training_params = test_moblinet(mv_base_model_params)
+# model, X_train, y_train, training_params = test_lstm()
+# model, X_train, y_train, training_params = test_resnet()
+
+model, X_train, y_train, training_params = start_moblinet_random_search(mv_base_model_params)
+launch_experiment(model, X_train, y_train, training_params=training_params)

@@ -1,7 +1,6 @@
 import threading
 import sys
 import os
-import copy
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from gui.part.utils import root, style, THEME_BG, set_theme, create_notebook_with_tabs, create_theme_buttons
@@ -44,7 +43,7 @@ def launch_experiment(
     params = training_params or {"epochs": 10, "batch_size": 32, "validation_split": 0.2}
     default_params = {"epochs": 10, "batch_size": 32, "validation_split": 0.2}
 
-    summary_params = copy.deepcopy(training_params) if training_params else copy.deepcopy(default_params)
+    summary_params = dict(training_params) if training_params else dict(default_params)
     _preset_logger = TrainingLogger(log_dir=log_dir, params=params, X=X_train, y=y_train, summary_params=summary_params)
     main_preset = preset_data or _preset_logger.get_preset_data_for_main_tab()
 
@@ -86,20 +85,29 @@ def launch_experiment(
         db.close()
         logger.model_db = model_db
         
-        # Train 탭 업데이트
         train_handlers["start_monitoring"](new_log_dir, user_info)
         
         def fit_thread():
             callbacks = [logger]
             if custom_callbacks:
                 callbacks += list(custom_callbacks)
-            model.fit(
-                X_train, y_train,
+            fit_kwargs = dict(
                 epochs=params["epochs"],
                 batch_size=params["batch_size"],
-                validation_split=params.get("validation_split", 0.2),
                 callbacks=callbacks
             )
+
+            if is_array_like(X_train) and is_array_like(y_train):
+                fit_kwargs["validation_split"] = params.get("validation_split", 0.2)
+                model.fit(X_train, y_train, **fit_kwargs)
+
+            elif "validation_data" in params:
+                fit_kwargs["validation_data"] = params["validation_data"]
+                model.fit(X_train, **fit_kwargs)
+
+            else:
+                model.fit(X_train, **fit_kwargs)
+
         threading.Thread(target=fit_thread, daemon=True).start()
 
     setup_main_tab(tab_main, notebook, tab_train, preset_data=main_preset,
@@ -118,4 +126,8 @@ def start_retrain(gpt_output):
     else:
         raise ValueError(f"지원하지 않는 모델 타입: {model_type}")
 
+def is_array_like(x):
+    import numpy as np
+    import tensorflow as tf
+    return isinstance(x, (np.ndarray, tf.Tensor))
 

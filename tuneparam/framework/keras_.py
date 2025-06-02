@@ -11,6 +11,25 @@ import copy
 from tuneparam.database.service.dao import create_training_log
 from tuneparam.database.db import SessionLocal
 
+def get_shape_safe(X):
+    if hasattr(X, "shape"):
+        return X.shape
+    elif hasattr(X, "__len__"):
+        try:
+            return (len(X),)
+        except Exception:
+            return None
+    else:
+        try:
+            return (sum(1 for _ in X),)
+        except Exception:
+            return None
+        
+def get_dtype_safe(X):
+    if hasattr(X, "dtype"):
+        return str(X.dtype)
+    else:
+        return str(type(X))
 
 def make_serializable(obj):
     """JSON 직렬화가 가능한 형태로 변환해주는 함수"""
@@ -21,13 +40,17 @@ def make_serializable(obj):
     elif isinstance(obj, dict):
         return {k: make_serializable(v) for k, v in obj.items()}
     else:
-        return str(obj)  # 객체는 문자열로 변환
+        return str(obj)
+
 
 def pretty_print_dict(name, d):
     print(f"==== {name} ====")
     print(json.dumps(make_serializable(d), ensure_ascii=False, indent=2))
 
+
 def convert_json_serializable(obj):
+    import numpy as np
+    import tensorflow as tf
     if isinstance(obj, dict):
         return {convert_json_serializable_key(k): convert_json_serializable(v) for k, v in obj.items()}
     elif isinstance(obj, list):
@@ -36,19 +59,19 @@ def convert_json_serializable(obj):
         return obj.item()
     elif isinstance(obj, (np.ndarray, )):
         return obj.tolist()
+    elif "tensorflow" in str(type(obj)):  # tf.Tensor, tf.data.Dataset 등
+        return str(obj)  # 혹은 "Tensor" / "Dataset"
     else:
         return obj
-    
 
 def convert_json_serializable_key(key):
     if isinstance(key, (int, float, bool, type(None), str)):
         return key
-    elif isinstance(key, np.generic):
+    elif hasattr(key, "item"):
         return key.item()
     else:
         return str(key)
     
-
 
 class TrainingLogger(Callback):
     def __init__(self, log_dir="logs", params=None, summary_params=None, X=None, y=None):
@@ -62,8 +85,7 @@ class TrainingLogger(Callback):
         self.start_time = None
         self.params_info = params if params else {}
         self.summary = summary_params
-        self.params_key = copy.deepcopy(list(summary_params.keys())) if summary_params else []
-        self.user_data = {}
+        self.params_key = list(summary_params.keys()) if summary_params else []
         self.model_db = None
 
         if y is not None:
@@ -73,10 +95,10 @@ class TrainingLogger(Callback):
             y_class_dist = None
 
         self.data_info = {
-            "X_shape": X.shape if X is not None else None,
-            "y_shape": y.shape if y is not None else None,
-            "X_dtype": str(X.dtype) if X is not None else None,
-            "y_dtype": str(y.dtype) if y is not None else None,
+            "X_shape": get_shape_safe(X) if X is not None else None,
+            "y_shape": get_shape_safe(y) if y is not None else None,
+            "X_dtype": get_dtype_safe(X) if X is not None else None,
+            "y_dtype": get_dtype_safe(y) if y is not None else None,
             "y_class_dist": y_class_dist,
         }
         print("🔎 [DEBUG] TrainingLogger init:")

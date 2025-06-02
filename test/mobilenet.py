@@ -1,56 +1,52 @@
-import sys
-import os
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Input, GlobalAveragePooling2D
-from keras.applications import MobileNetV3Small
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.applications import MobileNetV3Small
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.datasets import cifar100
 
-current_script_dir = os.path.dirname(os.path.abspath(__file__))
+def preprocess(image, label, img_size=96):   # 224가 너무 크면 96~128로
+    image = tf.image.resize(image, (img_size, img_size))
+    image = tf.cast(image, tf.float32) / 255.0  # 정규화
+    return image, tf.squeeze(label)             # label을 1D로
 
-project_root_dir = os.path.abspath(os.path.join(current_script_dir, '..')) # '..'는 'test' 디렉토리의 상위, 즉 'aisa'
-if project_root_dir not in sys.path:
-    sys.path.append(project_root_dir)
+def test_moblinet(
+    mv_base_model_params,
+    epochs=5,
+    batch_size=32,
+    learning_rate=0.001,
+    img_size=96,
+):
+    
+    (X_train, y_train), (X_test, y_test) = cifar100.load_data()
+    num_classes = 100
 
-def test_moblinet():
-    # ===== 데이터 준비 (MobileNetV3Small 입력 형태에 맞게 수정) =====
-    X_train_images = np.random.randint(0, 256, size=(100, 224, 224, 3), dtype=np.uint8)
-    y_train_labels = np.random.randint(0, 2, 100)
-    num_classes = len(np.unique(y_train_labels)) # 실제 클래스 수 계산
+    train_ds = tf.data.Dataset.from_tensor_slices((X_train, y_train))
+    train_ds = train_ds.map(lambda x, y: preprocess(x, y, img_size))
+    train_ds = train_ds.shuffle(10000).batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
-    # ===== MobileNetV3Small 설정 및 모델 구성 =====
-    mv_base_model_params = {
-        "input_shape": (224, 224, 3), # 입력 이미지 형태 명시
-        "alpha": 1.0, # 네트워크 폭 조절 (기본값)
-        "minimalistic": False, # 고급 블록 사용 여부 (기본값)
-        "include_top": False, # 전이 학습을 위해 최상위 분류 레이어 제거
-        "weights": "imagenet", # ImageNet 사전 훈련 가중치 로드
-        "input_tensor": None, # Keras 텐서를 입력으로 사용하지 않음
-        "pooling": "avg", # 특징 추출 후 Global Average Pooling 적용하여 2D 벡터 생성
-        "classifier_activation": "softmax", # include_top=False 일 때는 이 인자 무시됨
-        "include_preprocessing": True # Keras가 제공하는 전처리 레이어 포함 (모델이 [0-255] 입력을 기대)
-    }
+    val_ds = tf.data.Dataset.from_tensor_slices((X_test, y_test))
+    val_ds = val_ds.map(lambda x, y: preprocess(x, y, img_size))
+    val_ds = val_ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
+    mv_base_model_params['input_shape'] = (img_size, img_size, 3)
     base_model = MobileNetV3Small(**mv_base_model_params)
-
     x = base_model.output
-
     predictions = Dense(num_classes, activation='softmax')(x)
-
     model = Model(inputs=base_model.input, outputs=predictions)
 
-    model.compile(optimizer='adam',
-                loss='sparse_categorical_crossentropy', # y_train_labels가 정수 인코딩되어 있다면
-                metrics=['accuracy'])
-
+    model.compile(
+        optimizer=Adam(learning_rate=learning_rate),
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
 
     training_hyperparams = {
-        "epochs": 5,
-        "batch_size": 32,
-        "learning_rate": 0.001,
-        "validation_split": 0.2
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "learning_rate": learning_rate,
+        "validation_data": val_ds
     }
-    return model, X_train_images, y_train_labels, training_hyperparams
 
-    launch_experiment(model, X_train_images, y_train_labels, training_params=training_hyperparams)
-
-    print("모델 구성 및 실험 실행 코드 준비 완료.")
+    return model, train_ds, y_train, training_hyperparams
