@@ -7,9 +7,25 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 import os
-# 현재 파일 위치에서 최상위 디렉토리(예: 3단계 위) 가져오기
 db_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-DATABASE_URL = f"sqlite:///{db_dir}/my_database.db"
+
+user_suffix = 'sg'  # 'sg', 'mj', 'hm' 중 선택
+
+# suffix에 따라 파일명 분기
+if user_suffix == 'sg':
+    db_name = 'my_database_sg.db'
+elif user_suffix == 'mj':
+    db_name = 'my_database_mj.db'
+elif user_suffix == 'hm':
+    db_name = 'my_database_hm.db'
+else:
+    raise ValueError(f"Unknown user_suffix: {user_suffix}")
+
+# 최종 DB 경로 및 SQLAlchemy용 URL 구성
+db_path = os.path.join(db_dir, db_name)
+DATABASE_URL = f"sqlite:///{db_path}"
+
+print("DATABASE_URL:", DATABASE_URL)
 
 engine = create_engine(
     DATABASE_URL,
