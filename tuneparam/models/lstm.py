@@ -1,60 +1,114 @@
+import sys
+import os
+#from gui.main import launch_experiment
+
 import numpy as np
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Input, LSTM, Bidirectional, Dropout
-from tensorflow.keras.optimizers import Adam, AdamW, SGD, RMSprop
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.layers import Dense, Input, LSTM, Bidirectional, Dropout, Embedding
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers.legacy import SGD
+from tensorflow.keras.losses import BinaryCrossentropy
+from tensorflow import keras
 
-def retrain_lstm(X_train_seq, y_train_labels, gpt_output):
-    from tuneparam.gui.main import launch_experiment
-    rec = gpt_output["recommendations"]
+imdb = keras.datasets.imdb
+current_script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root_dir = os.path.abspath(os.path.join(current_script_dir, '..'))
+if project_root_dir not in sys.path:
+    sys.path.append(project_root_dir)
 
-    num_classes = len(np.unique(y_train_labels))
 
-    # ----------- LSTM 모델 파라미터 (test_lstm과 동일한 구조) -----------
-    lstm_model_params = dict(
-        units=rec.get("hidden_size", 16),  # 스키마의 "hidden_size"를 "units"로 매핑
-        dropout=rec.get("dropout", 0.0),
-        recurrent_dropout=rec.get("recurrent_dropout", 0.0),
-        return_sequences=rec.get("return_sequences", False),
-        activation=rec.get("activation", "tanh"),
-        recurrent_activation=rec.get("recurrent_activation", "sigmoid"),
-        use_bias=rec.get("use_bias", True),
-        kernel_initializer=rec.get("kernel_initializer", "glorot_uniform"),
-        recurrent_initializer=rec.get("recurrent_initializer", "orthogonal"),
-        bias_initializer=rec.get("bias_initializer", "zeros"),
-        unit_forget_bias=rec.get("unit_forget_bias", True),
-        kernel_regularizer=rec.get("kernel_regularizer"),
-        recurrent_regularizer=rec.get("recurrent_regularizer"),
-        bias_regularizer=rec.get("bias_regularizer"),
-        activity_regularizer=rec.get("activity_regularizer"),
-        kernel_constraint=rec.get("kernel_constraint"),
-        recurrent_constraint=rec.get("recurrent_constraint"),
-        bias_constraint=rec.get("bias_constraint"),
-        implementation=rec.get("implementation", 2),
-        go_backwards=rec.get("go_backwards", False),
-        stateful=rec.get("stateful", False),
-        time_major=rec.get("time_major", False),
-        unroll=rec.get("unroll", False)
-    )
-    # None 값 제거
-    lstm_model_params = {k: v for k, v in lstm_model_params.items() if v is not None}
+def build_and_compile_model(training_params: dict) -> Model:
+    """
+    training_params 딕셔너리 기반으로 LSTM 모델을 생성하고 컴파일.
 
-    # 모델 구성 파라미터 (test_lstm과 동일한 구조)
-    model_config_params = dict(
-        num_layers=rec.get("num_layers", 1),
-        bidirectional=rec.get("bidirectional", False),
-        sequence_length=rec.get("sequence_length", 20),
-        feature_dim=rec.get("embedding_dim", 8),  # 스키마의 "embedding_dim"을 "feature_dim"으로 매핑
-        dense_dropout=rec.get("dense_dropout", 0.0)
-    )
+    Parameters:
+        training_params (dict): 하이퍼파라미터 및 모델 구성 딕셔너리
 
-    # ===== LSTM 모델 구성 (test_lstm과 완전히 동일) =====
-    inputs = Input(shape=(model_config_params["sequence_length"], model_config_params["feature_dim"]))
+    Returns:
+        model (Model): 컴파일된 Keras 모델
+    """
     
-    x = inputs
+    # 데이터 파라미터
+    vocab_size = training_params.get("vocab_size", 10000)
+    max_length = training_params.get("max_length", 500)
+    embedding_dim = training_params.get("embedding_dim", 128)
+    
+    # LSTM 파라미터 추출
+    units = training_params.get("units", 64)
+    dropout = training_params.get("dropout", 0.0)
+    recurrent_dropout = training_params.get("recurrent_dropout", 0.0)
+    return_sequences = training_params.get("return_sequences", False)
+    activation = training_params.get("activation", "tanh")
+    recurrent_activation = training_params.get("recurrent_activation", "sigmoid")
+    use_bias = training_params.get("use_bias", True)
+    kernel_initializer = training_params.get("kernel_initializer", "glorot_uniform")
+    recurrent_initializer = training_params.get("recurrent_initializer", "orthogonal")
+    bias_initializer = training_params.get("bias_initializer", "zeros")
+    unit_forget_bias = training_params.get("unit_forget_bias", True)
+    kernel_regularizer = training_params.get("kernel_regularizer", None)
+    recurrent_regularizer = training_params.get("recurrent_regularizer", None)
+    bias_regularizer = training_params.get("bias_regularizer", None)
+    activity_regularizer = training_params.get("activity_regularizer", None)
+    kernel_constraint = training_params.get("kernel_constraint", None)
+    recurrent_constraint = training_params.get("recurrent_constraint", None)
+    bias_constraint = training_params.get("bias_constraint", None)
+    implementation = training_params.get("implementation", 2)
+    go_backwards = training_params.get("go_backwards", False)
+    stateful = training_params.get("stateful", False)
+    time_major = training_params.get("time_major", False)
+    unroll = training_params.get("unroll", False)
+    
+    # 모델 구성 파라미터
+    num_layers = training_params.get("num_layers", 1)
+    bidirectional = training_params.get("bidirectional", False)
+    dense_dropout = training_params.get("dense_dropout", 0.0)
+    
+    # 컴파일 파라미터
+    learning_rate = training_params.get("learning_rate", 0.001)
+    optimizer_name = training_params.get("optimizer", "adam").lower()
+    momentum = training_params.get("momentum", 0.0)
+    weight_decay = training_params.get("weight_decay", 0.0)
+    label_smoothing = training_params.get("label_smoothing", 0.0)
+    loss_name = training_params.get("loss", "binary_crossentropy")
+    metrics = training_params.get("metrics", ["accuracy"])
+
+    # LSTM 파라미터 딕셔너리
+    lstm_model_params = {
+        "units": units,
+        "dropout": dropout,
+        "recurrent_dropout": recurrent_dropout,
+        "return_sequences": return_sequences,
+        "activation": activation,
+        "recurrent_activation": recurrent_activation,
+        "use_bias": use_bias,
+        "kernel_initializer": kernel_initializer,
+        "recurrent_initializer": recurrent_initializer,
+        "bias_initializer": bias_initializer,
+        "unit_forget_bias": unit_forget_bias,
+        "kernel_regularizer": kernel_regularizer,
+        "recurrent_regularizer": recurrent_regularizer,
+        "bias_regularizer": bias_regularizer,
+        "activity_regularizer": activity_regularizer,
+        "kernel_constraint": kernel_constraint,
+        "recurrent_constraint": recurrent_constraint,
+        "bias_constraint": bias_constraint,
+        "implementation": implementation,
+        "go_backwards": go_backwards,
+        "stateful": stateful,
+        "time_major": time_major,
+        "unroll": unroll
+    }
+
+    # 모델 구성
+    inputs = Input(shape=(max_length,))
+    
+    # 임베딩 레이어
+    x = Embedding(vocab_size, embedding_dim, input_length=max_length)(inputs)
+    
     # 다중 레이어 LSTM 구성
-    for i in range(model_config_params["num_layers"]):
-        if i < model_config_params["num_layers"] - 1:
+    for i in range(num_layers):
+        if i < num_layers - 1:
             # 마지막 레이어가 아닌 경우 return_sequences=True
             current_lstm_params = lstm_model_params.copy()
             current_lstm_params["return_sequences"] = True
@@ -63,66 +117,95 @@ def retrain_lstm(X_train_seq, y_train_labels, gpt_output):
             current_lstm_params = lstm_model_params.copy()
         
         # Bidirectional LSTM 사용 여부
-        if model_config_params["bidirectional"]:
+        if bidirectional:
             x = Bidirectional(LSTM(**current_lstm_params))(x)
         else:
             x = LSTM(**current_lstm_params)(x)
     
     # Dense 레이어 전 드롭아웃
-    if model_config_params["dense_dropout"] > 0:
-        x = Dropout(model_config_params["dense_dropout"])(x)
+    if dense_dropout > 0:
+        x = Dropout(dense_dropout)(x)
     
-    # 출력 분류기 (스키마의 "output_classifier" 반영)
-    classifier_activation = rec.get("output_classifier", "softmax")
-    if classifier_activation and classifier_activation.lower() != "softmax":
-        predictions = Dense(num_classes, activation=classifier_activation)(x)
-    else:
-        predictions = Dense(num_classes, activation='softmax')(x)
-    
-    model = Model(inputs=inputs, outputs=predictions)
+    # 출력 레이어 (이진 분류)
+    predictions = Dense(1, activation='sigmoid')(x)
 
-    # ----------- 컴파일 파라미터 -----------
-    optimizer_name = str(rec.get("optimizer", "adam")).lower()
-    learning_rate = rec.get("learning_rate", 0.001)
+    model = Model(inputs=inputs, outputs=predictions)
     
-    if optimizer_name == "adamw":
-        optimizer = AdamW(learning_rate=learning_rate)
-    elif optimizer_name == "sgd":
-        optimizer = SGD(learning_rate=learning_rate)
-    elif optimizer_name == "rmsprop":
-        optimizer = RMSprop(learning_rate=learning_rate)
-    else:
+    # 옵티마이저 설정
+    try:
+        if optimizer_name == 'adam':
+            optimizer = Adam(learning_rate=learning_rate)
+        elif optimizer_name == 'sgd':
+            optimizer = SGD(learning_rate=learning_rate, momentum=momentum, decay=weight_decay)
+        else:
+            raise ValueError(f"Unsupported optimizer: {optimizer_name}")
+    except Exception as e:
         optimizer = Adam(learning_rate=learning_rate)
 
-    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    # 손실 함수 설정
+    if loss_name == "binary_crossentropy":
+        loss = BinaryCrossentropy(label_smoothing=label_smoothing)
+    else:
+        loss = loss_name
+    
+    # 모델 컴파일
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-    # ----------- 콜백 설정 (스키마의 early_stopping_patience 사용) -----------
-    callbacks = []
-    if str(rec.get("callbacks", "")).lower() == "earlystopping":
-        patience = rec.get("early_stopping_patience", 3)
-        callbacks.append(EarlyStopping(monitor="val_loss", patience=patience, restore_best_weights=True))
+    return model
 
-    # ----------- fit(훈련) 파라미터 -----------
-    fit_kwargs = dict(
-        epochs=rec.get("epochs", 5),
-        batch_size=rec.get("batch_size", 16),
-        verbose=rec.get("verbose", 1),
-        validation_split=rec.get("validation_split", 0.2),
-        validation_data=rec.get("validation_data"),
-        shuffle=rec.get("shuffle", True),
-        class_weight=rec.get("class_weight"),
-        sample_weight=rec.get("sample_weight"),
-        initial_epoch=rec.get("initial_epoch", 0),
-        steps_per_epoch=rec.get("steps_per_epoch"),
-        validation_steps=rec.get("validation_steps"),
-        validation_batch_size=rec.get("validation_batch_size"),
-        validation_freq=rec.get("validation_freq", 1),
-        max_queue_size=rec.get("max_queue_size", 10),
-        workers=rec.get("workers", 1),
-        use_multiprocessing=rec.get("use_multiprocessing", False),
-        callbacks=callbacks if callbacks else None
-    )
-    # None 값 제거
-    fit_kwargs = {k: v for k, v in fit_kwargs.items() if v is not None}
 
-    launch_experiment(model, X_train_seq, y_train_labels, training_params=fit_kwargs)
+def test_lstm():
+    """IMDB 영화 리뷰 감정 분석용 LSTM 테스트 (ResNet 스타일)"""
+    
+    # ===== IMDB 데이터 로드 및 전처리 =====
+    max_features = 10000  # 어휘 크기
+    max_length = 500      # 최대 시퀀스 길이
+    
+    (x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_features)
+    
+    # 시퀀스 패딩
+    x_train = pad_sequences(x_train, maxlen=max_length)
+    x_test = pad_sequences(x_test, maxlen=max_length)
+    
+    # 레이블을 float32로 변환
+    y_train = y_train.astype('float32')
+    y_test = y_test.astype('float32')
+
+    # ===== LSTM 설정 및 모델 구성 =====
+    training_params = {
+        "vocab_size": max_features,
+        "sequence_length": max_length,
+        "embedding_dim": 128,
+        
+        # LSTM 핵심 파라미터
+        "hidden_size": 64,
+        "dropout": 0.3,
+        "recurrent_dropout": 0.3,
+        "num_layers": 1,
+        "bidirectional": False,
+        "dense_dropout": 0.5,
+        
+        # 훈련 파라미터
+        "optimizer": "adam",
+        "learning_rate": 0.001,
+        "batch_size": 32,
+        "epochs": 1,
+        "validation_split": 0.2,
+    }
+
+    model = build_and_compile_model(training_params)
+    
+    print("LSTM 모델 구성 및 실험 실행 코드 준비 완료.")
+    print(f"훈련 데이터 형태: {x_train.shape}")
+    print(f"테스트 데이터 형태: {x_test.shape}")
+    print(f"클래스 분포 - 긍정: {np.sum(y_train)}, 부정: {len(y_train) - np.sum(y_train)}")
+    
+    return model, x_train, y_train, training_params
+
+
+def retrain_lstm(X_train_sequences, y_train_labels, gpt_output):
+    """GPT 추천 파라미터로 LSTM 재훈련"""
+    from gui.main import launch_experiment
+    rec = gpt_output["recommendations"]
+    model = build_and_compile_model(rec)
+    launch_experiment(model, X_train_sequences, y_train_labels, training_params=rec)

@@ -23,7 +23,7 @@ else:
     print(f"Database found at {db_path}.")
 #
 # model, X_train, y_train, training_params = test_moblinet()
-# model, X_train, y_train, training_params = test_lstm()
-model, X_train, y_train, training_params = test_resnet()
+model, X_train, y_train, training_params = test_lstm()
+#model, X_train, y_train, training_params = test_resnet()
 
 launch_experiment(model, X_train[:50], y_train[:50], training_params=training_params)

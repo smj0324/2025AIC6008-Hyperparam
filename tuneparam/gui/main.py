@@ -111,7 +111,7 @@ def start_retrain(gpt_output):
     global model_type
     if model_type == "MobilenetV3":
         mobilenetv3.retrain_mobilenet(X_train, y_train, gpt_output)
-    elif model_type == "lstm":
+    elif model_type == "LSTM":
         lstm.retrain_lstm(X_train, y_train, gpt_output)
     elif model_type == "Resnet":
         resnet.retrain_resnet(X_train, y_train, gpt_output)
