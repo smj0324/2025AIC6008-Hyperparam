@@ -8,11 +8,80 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.datasets import cifar100
+from tensorflow.keras.datasets import cifar100, cifar10
 from tensorflow.keras.optimizers.legacy import SGD
 from copy import deepcopy
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from keras.layers import Dense, AveragePooling2D, Flatten, Input, Activation, BatchNormalization, Conv2D
+from keras.regularizers import l2
+from keras.models import Model
 
+def conv2d_bn(x, filters, kernel_size, weight_decay=.0, strides=(1, 1)):
+    layer = Conv2D(filters=filters,
+                   kernel_size=kernel_size,
+                   strides=strides,
+                   padding='same',
+                   use_bias=False,
+                   kernel_regularizer=l2(weight_decay)
+                   )(x)
+    layer = BatchNormalization()(layer)
+    return layer
+
+
+def conv2d_bn_relu(x, filters, kernel_size, weight_decay=.0, strides=(1, 1)):
+    layer = conv2d_bn(x, filters, kernel_size, weight_decay, strides)
+    layer = Activation('relu')(layer)
+    return layer
+
+
+def ResidualBlock(x, filters, kernel_size, weight_decay, downsample=True):
+    if downsample:
+        # residual_x = conv2d_bn_relu(x, filters, kernel_size=1, strides=2)
+        residual_x = conv2d_bn(x, filters, kernel_size=1, strides=2)
+        stride = 2
+    else:
+        residual_x = x
+        stride = 1
+    residual = conv2d_bn_relu(x,
+                              filters=filters,
+                              kernel_size=kernel_size,
+                              weight_decay=weight_decay,
+                              strides=stride,
+                              )
+    residual = conv2d_bn(residual,
+                         filters=filters,
+                         kernel_size=kernel_size,
+                         weight_decay=weight_decay,
+                         strides=1,
+                         )
+    out = layers.add([residual_x, residual])
+    out = Activation('relu')(out)
+    return out
+
+def ResNet18(input_shape, classes, weight_decay=1e-4):
+    input = Input(shape=input_shape)
+    x = input
+    # x = conv2d_bn_relu(x, filters=64, kernel_size=(7, 7), weight_decay=weight_decay, strides=(2, 2))
+    # x = MaxPool2D(pool_size=(3, 3), strides=(2, 2),  padding='same')(x)
+    x = conv2d_bn_relu(x, filters=64, kernel_size=(3, 3), weight_decay=weight_decay, strides=(1, 1))
+
+    # # conv 2
+    x = ResidualBlock(x, filters=64, kernel_size=(3, 3), weight_decay=weight_decay, downsample=False)
+    x = ResidualBlock(x, filters=64, kernel_size=(3, 3), weight_decay=weight_decay, downsample=False)
+    # # conv 3
+    x = ResidualBlock(x, filters=128, kernel_size=(3, 3), weight_decay=weight_decay, downsample=True)
+    x = ResidualBlock(x, filters=128, kernel_size=(3, 3), weight_decay=weight_decay, downsample=False)
+    # # conv 4
+    x = ResidualBlock(x, filters=256, kernel_size=(3, 3), weight_decay=weight_decay, downsample=True)
+    x = ResidualBlock(x, filters=256, kernel_size=(3, 3), weight_decay=weight_decay, downsample=False)
+    # # conv 5
+    x = ResidualBlock(x, filters=512, kernel_size=(3, 3), weight_decay=weight_decay, downsample=True)
+    x = ResidualBlock(x, filters=512, kernel_size=(3, 3), weight_decay=weight_decay, downsample=False)
+    x = AveragePooling2D(pool_size=(4, 4), padding='valid')(x)
+    x = Flatten()(x)
+    x = Dense(classes, activation='softmax')(x)
+    model = Model(input, x, name='ResNet18')
+    return model
 
 def generate_random_hyperparams():
     learning_rate = 10 ** random.uniform(-4, -1)  # 0.0001 ~ 0.1 (log scale)
@@ -70,7 +139,7 @@ def build_resnet(input_shape, num_classes, block_counts):
 def get_resnet_model(model_name, input_shape=(32, 32, 3), num_classes=10):
     model_name = model_name.lower()
     if model_name == 'resnet18':
-        return build_resnet(input_shape, num_classes, [2, 2, 2, 2])
+        return ResNet18(input_shape, num_classes, 1e-4)
     elif model_name == 'resnet34':
         return build_resnet(input_shape, num_classes, [3, 4, 6, 3])
     elif model_name == 'resnet50':
@@ -120,7 +189,7 @@ def build_and_compile_model(training_params: dict, train_data, train_label):
             optimizer = SGD(learning_rate=learning_rate, momentum=momentum, decay=weight_decay)
         else:
             raise ValueError(f"Unsupported optimizer: {optimizer_name}")
-    except Exception as e:
+    except Exception:
         optimizer = Adam(learning_rate=learning_rate)
 
     # 손실 함수 설정
@@ -135,11 +204,17 @@ def build_and_compile_model(training_params: dict, train_data, train_label):
     # 데이터 증강 적용
     if augment:
         augment_params = {
-            'rotation_range': 15,
-            'width_shift_range': 0.1,
-            'height_shift_range': 0.1,
-            'horizontal_flip': True,
-            'zoom_range': 0.1
+            'rotation_range': 10,
+            'zoom_range': 0.1,
+            "featurewise_center": False,
+            "samplewise_center": False,
+            "featurewise_std_normalization": False,
+            "samplewise_std_normalization": False,
+            "zca_whitening": False,
+            "width_shift_range": 4,
+            "height_shift_range": 4,
+            "horizontal_flip": True,
+            "vertical_flip": False
         }
         datagen = ImageDataGenerator(**augment_params)
         datagen.fit(train_data)
@@ -150,12 +225,19 @@ def build_and_compile_model(training_params: dict, train_data, train_label):
     else:
         return model, train_data, train_label
 
+def resize_images_in_batches(data, target_size=(224, 224), batch_size=32):
+    resized_list = []
+    for i in range(0, len(data), batch_size):
+        batch = tf.convert_to_tensor(data[i:i + batch_size], dtype=tf.float32)
+        batch_resized = tf.image.resize(batch, target_size)
+        resized_list.append(batch_resized)
+    return tf.concat(resized_list, axis=0).numpy()
 
 def test_resnet():
     training_params = {
-        "model_size": "resnet50",
+        "model_size": "resnet18",
         "input_shape": (32, 32, 3),
-        "num_classes": 100,
+        "num_classes": 10,
         "epochs": 20,
         "batch_size": 64,
         "shuffle": True,
@@ -166,9 +248,8 @@ def test_resnet():
         "max_queue_size": 10,
         "workers": 1,
         "use_multiprocessing": False,
-
         "optimizer": "adam",
-        "learning_rate": 0.1,
+        "learning_rate": 0.001,
         "weight_decay": 1e-4,
         "momentum": 0.9,
         "dropout_rate": 0.0,
@@ -181,9 +262,9 @@ def test_resnet():
         "metrics": ["accuracy"]
     }
 
-    num_classes = 100
+    num_classes = training_params["num_classes"]
 
-    (x_train, y_train), (_, _) = cifar100.load_data()
+    (x_train, y_train), (_, _) = cifar10.load_data()
     y_train = to_categorical(y_train, num_classes)
     x_train = x_train.astype('float32') / 255.0
     model, x_train, y_train = build_and_compile_model(training_params, x_train, y_train)
@@ -195,7 +276,7 @@ def test_random_search_resnet():
     base_params = {
         "model_size": "resnet50",
         "input_shape": (32, 32, 3),
-        "num_classes": 100,
+        "num_classes": 10,
         "epochs": 20,
         "batch_size": 64,
         "shuffle": True,
@@ -229,7 +310,7 @@ def test_random_search_resnet():
 
     # 데이터 준비
     num_classes = training_params["num_classes"]
-    (x_train, y_train), (x_test, y_test) = cifar100.load_data()
+    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
     y_train = to_categorical(y_train, num_classes)
     x_train = x_train.astype('float32') / 255.0
 
