@@ -12,6 +12,7 @@ from framework.keras_ import TrainingLogger
 from database.service.dao import model_crud
 from database.db import SessionLocal
 from tuneparam.models import mobilenetv3, lstm, resnet
+from keras.callbacks import EarlyStopping
 
 global X_train, y_train
 global model_type
@@ -91,8 +92,18 @@ def launch_experiment(
         
         def fit_thread():
             callbacks = [logger]
+
+            # custom_callbacks가 있으면 리스트에 추가
             if custom_callbacks:
                 callbacks += list(custom_callbacks)
+
+            # EarlyStopping 콜백 추가
+            callbacks.append(EarlyStopping(
+                monitor='val_loss',
+                patience=10
+            ))
+
+            # fit_kwargs 딕셔너리 정의
             fit_kwargs = dict(
                 epochs=params["epochs"],
                 batch_size=params["batch_size"],
