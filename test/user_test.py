@@ -17,7 +17,7 @@ from tuneparam.database import table_create, dump_test
 db_path = DATABASE_URL_ORIGIN
 
 if not os.path.exists(db_path):
-    print("Database not found. Creating database...")
+    print("Datab ase not found. Creating database...")
     table_create.main()
     dump_test.main()
 else:
@@ -29,7 +29,7 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 print(tf.config.list_physical_devices('GPU'))
 
 mv_base_model_params = {
-    "input_shape": (224, 224, 3),
+    "input_shape": (32, 32, 3),
     "alpha": 1.0,           
     "minimalistic": True,
     "include_top": False,
@@ -40,9 +40,9 @@ mv_base_model_params = {
     "include_preprocessing": True
 }
 
-# model, X_train, y_train, training_params = test_moblinet(mv_base_model_params)
+model, X_train, y_train, training_params = test_moblinet(mv_base_model_params)
 # model, X_train, y_train, training_params = test_lstm()
-model, X_train, y_train, training_params = test_resnet()
+# model, X_train, y_train, training_params = test_resnet()
 #model, X_train, y_train, training_params = test_random_search_resnet()
 
 #model, X_train, y_train, training_params = start_moblinet_random_search(mv_base_model_params)

@@ -609,8 +609,10 @@ class HyperparameterOptimizer:
             "Provide response in JSON format only, without additional explanation."
         )
 
+        serializable_params = make_json_serializable(current_params)
+
         user_prompt = (
-            f"Current hyperparameters:\n{json.dumps(current_params, indent=2)}\n\n"
+            f"Current hyperparameters:\n{json.dumps(serializable_params, indent=2)}\n\n"
             f"Training results:\n{json.dumps(training_results, indent=2)}\n\n"
             f"Dataset type: {dataset_type}\n"
             f"Optimization goal: {goal}\n\n"
@@ -704,6 +706,16 @@ class HyperparameterOptimizer:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
         return result
+    
+
+def make_json_serializable(d):
+    def is_json_serializable(v):
+        try:
+            json.dumps(v)
+            return True
+        except (TypeError, OverflowError):
+            return False
+    return {k: v for k, v in d.items() if is_json_serializable(v)}
 
 
 # ─────────────────────────────────────────────────────────────────────────────────────────

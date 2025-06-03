@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow_addons as tfa
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.applications import MobileNetV3Small
@@ -11,7 +12,7 @@ def retrain_mobilenet(X_train_images, y_train_labels, gpt_output):
 
     # ----------- 모델 생성 파라미터 -----------
     model_kwargs = dict(
-        input_shape=(224, 224, 3),
+        input_shape=(32, 32, 3),
         alpha=rec["alpha"] if rec["alpha"] else 1.0,
         minimalistic=rec["minimalistic"],
         include_top=rec["include_top"],   # 보통 False 후 Dense 붙이지만, True도 반영
@@ -37,8 +38,13 @@ def retrain_mobilenet(X_train_images, y_train_labels, gpt_output):
         model = Model(inputs=base_model.input, outputs=predictions)
 
     # ----------- 컴파일 파라미터 -----------
-    optimizer_cls = Adam if str(rec["optimizer"]).lower() == "adamw" else Adam
-    optimizer = optimizer_cls(learning_rate=rec["learning_rate"])
+    optimizer_name = str(rec["optimizer"]).lower()
+    lr = rec["learning_rate"]
+
+    if optimizer_name == "adamw":
+        optimizer = tfa.optimizers.AdamW(learning_rate=lr, weight_decay=rec.get("weight_decay", 1e-4))
+    else:
+        optimizer = Adam(learning_rate=lr)
     loss = 'sparse_categorical_crossentropy'
     metrics = ['accuracy']
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
@@ -52,8 +58,6 @@ def retrain_mobilenet(X_train_images, y_train_labels, gpt_output):
         epochs=rec["epochs"],
         batch_size=rec["batch_size"],
         verbose=rec["verbose"],
-        validation_split=rec["validation_split"],
-        validation_data=rec["validation_data"],
         shuffle=rec["shuffle"],
         class_weight=rec["class_weight"],
         sample_weight=rec["sample_weight"],
@@ -65,7 +69,8 @@ def retrain_mobilenet(X_train_images, y_train_labels, gpt_output):
         max_queue_size=rec["max_queue_size"],
         workers=rec["workers"],
         use_multiprocessing=rec["use_multiprocessing"],
-        callbacks=callbacks if callbacks else None
+        callbacks=callbacks if callbacks else None,
+        validation_split=rec.get("validation_split", 0.2)
     )
     # None 값은 fit에서 기본값 쓰도록 제거
     fit_kwargs = {k: v for k, v in fit_kwargs.items() if v is not None}

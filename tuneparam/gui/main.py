@@ -13,6 +13,8 @@ from database.service.dao import model_crud
 from database.db import SessionLocal
 from tuneparam.models import mobilenetv3, lstm, resnet
 from keras.callbacks import EarlyStopping
+import tensorflow as tf
+
 
 global X_train, y_train
 global model_type
@@ -92,34 +94,32 @@ def launch_experiment(
         
         def fit_thread():
             callbacks = [logger]
-
-            # custom_callbacks가 있으면 리스트에 추가
             if custom_callbacks:
                 callbacks += list(custom_callbacks)
+            callbacks.append(EarlyStopping(monitor='val_loss', patience=10))
 
-            # EarlyStopping 콜백 추가
-            callbacks.append(EarlyStopping(
-                monitor='val_loss',
-                patience=10
-            ))
+            import tensorflow as tf
 
-            # fit_kwargs 딕셔너리 정의
-            fit_kwargs = dict(
-                epochs=params["epochs"],
-                batch_size=params["batch_size"],
-                callbacks=callbacks
-            )
-
-            if is_array_like(X_train) and is_array_like(y_train):
-                fit_kwargs["validation_split"] = params.get("validation_split", 0.2)
-                model.fit(X_train, y_train, **fit_kwargs)
-
-            elif "validation_data" in params:
-                fit_kwargs["validation_data"] = params["validation_data"]
-                model.fit(X_train, **fit_kwargs)
-
+            if isinstance(X_train, tf.data.Dataset):
+                train_ds, val_ds = split_tf_dataset(X_train, val_ratio=params.get("validation_split", 0.2))
+                fit_kwargs = dict(
+                    epochs=params["epochs"],
+                    callbacks=callbacks,
+                    validation_data=val_ds
+                )
+                model.fit(train_ds, **fit_kwargs)
             else:
-                model.fit(X_train, **fit_kwargs)
+                fit_kwargs = dict(
+                    epochs=params["epochs"],
+                    batch_size=params["batch_size"],
+                    callbacks=callbacks
+                )
+                if "validation_data" in params:
+                    fit_kwargs["validation_data"] = params["validation_data"]
+                else:
+                    fit_kwargs["validation_split"] = params.get("validation_split", 0.2)
+
+                model.fit(X_train, y_train, **fit_kwargs)
 
         threading.Thread(target=fit_thread, daemon=True).start()
 
@@ -144,3 +144,10 @@ def is_array_like(x):
     import tensorflow as tf
     return isinstance(x, (np.ndarray, tf.Tensor))
 
+def split_tf_dataset(dataset, val_ratio=0.2):
+    total_count = dataset.cardinality().numpy()
+    val_count = int(total_count * val_ratio)
+    train_count = total_count - val_count
+    train_ds = dataset.take(train_count)
+    val_ds = dataset.skip(train_count)
+    return train_ds, val_ds

@@ -4,23 +4,23 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.applications import MobileNetV3Small
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.datasets import cifar100
+from tensorflow.keras.datasets import cifar10
 
-def preprocess(image, label, img_size=96):   # 224가 너무 크면 96~128로
+def preprocess(image, label, img_size=32):
     image = tf.image.resize(image, (img_size, img_size))
-    image = tf.cast(image, tf.float32) / 255.0  # 정규화
-    return image, tf.squeeze(label)             # label을 1D로
+    image = tf.cast(image, tf.float32) / 255.0
+    return image, tf.squeeze(label) 
 
 def test_moblinet(
     mv_base_model_params,
-    epochs=5,
+    epochs=1,
     batch_size=32,
-    learning_rate=0.001,
-    img_size=96,
+    learning_rate=0.05,
+    img_size=32,
 ):
     
-    (X_train, y_train), (X_test, y_test) = cifar100.load_data()
-    num_classes = 100
+    (X_train, y_train), (X_test, y_test) = cifar10.load_data()
+    num_classes = 10
 
     train_ds = tf.data.Dataset.from_tensor_slices((X_train, y_train))
     train_ds = train_ds.map(lambda x, y: preprocess(x, y, img_size))
