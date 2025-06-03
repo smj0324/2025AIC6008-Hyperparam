@@ -330,12 +330,14 @@ class HyperparameterOptimizer:
         
         Provide a concise but thorough analysis."""
 
+        serializable_params = make_json_serializable(current_params)
+
         user_messages = [
             {
                 "type": "text",
                 "text": f"""Analyze these training graphs for the {model_name} model.
                 Current metrics: {json.dumps(training_results, indent=2)}
-                Current parameters: {json.dumps(current_params, indent=2)}
+                Current parameters: {json.dumps(serializable_params, indent=2)}
                 
                 What patterns do you observe? What improvements would you suggest?"""
             }
