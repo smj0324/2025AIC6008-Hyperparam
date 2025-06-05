@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow_addons as tfa
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.applications import MobileNetV3Small
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
+from tensorflow.keras.applications import MobileNetV3Large
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 
@@ -15,27 +15,30 @@ def retrain_mobilenet(X_train_images, y_train_labels, gpt_output):
         input_shape=(32, 32, 3),
         alpha=rec["alpha"] if rec["alpha"] else 1.0,
         minimalistic=rec["minimalistic"],
-        include_top=rec["include_top"],   # 보통 False 후 Dense 붙이지만, True도 반영
-        weights=rec["weights"] if rec["weights"] else None,
+        weights="imagenet",
+        include_top=False,
         input_tensor=rec["input_tensor"],
-        pooling=rec["pooling"],
         classifier_activation=rec["classifier_activation"],
         include_preprocessing=rec["include_preprocessing"],
+        pooling=None,
     )
     # None 제거
     model_kwargs = {k: v for k, v in model_kwargs.items() if v is not None}
 
     num_classes = len(np.unique(y_train_labels))
 
-    base_model = MobileNetV3Small(**model_kwargs)
+    base_model = MobileNetV3Large(**model_kwargs)
 
-    if rec["include_top"]:
-        # 이미 top까지 붙은 모델 반환 (Dense 생략)
-        model = base_model
-    else:
-        x = base_model.output
-        predictions = Dense(num_classes, activation=rec["classifier_activation"])(x)
-        model = Model(inputs=base_model.input, outputs=predictions)
+    for layer in base_model.layers:
+        layer.trainable = False
+
+    # 베이스 모델 위에 새로운 분류 레이어를 추가
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x) # 특징 맵을 단일 벡터로 평균 풀링
+    x = Dense(1024, activation='relu')(x) # 추가 완전 연결 레이어
+    predictions = Dense(num_classes, activation='softmax')(x) # 최종 출력 레이어
+
+    model = Model(inputs=base_model.input, outputs=predictions)
 
     # ----------- 컴파일 파라미터 -----------
     optimizer_name = str(rec["optimizer"]).lower()
@@ -69,10 +72,8 @@ def retrain_mobilenet(X_train_images, y_train_labels, gpt_output):
         max_queue_size=rec["max_queue_size"],
         workers=rec["workers"],
         use_multiprocessing=rec["use_multiprocessing"],
-        callbacks=callbacks if callbacks else None,
         validation_split=rec.get("validation_split", 0.2)
     )
-    # None 값은 fit에서 기본값 쓰도록 제거
     fit_kwargs = {k: v for k, v in fit_kwargs.items() if v is not None}
 
     launch_experiment(model, X_train_images, y_train_labels, training_params=fit_kwargs)

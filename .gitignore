@@ -20,6 +20,7 @@ pytest_cache/
 *.db
 *.sqlite
 *.sqlite3
+tuneparam/database/db.py
 
 # Development data
 data/
