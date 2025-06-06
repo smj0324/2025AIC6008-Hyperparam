@@ -40,8 +40,9 @@ mv_base_model_params = {
     "include_preprocessing": True
 }
 
-model, X_train, y_train, training_params = test_moblinet(mv_base_model_params)
-# model, X_train, y_train, training_params = test_lstm()
+# model, X_train, y_train, training_params = test_moblinet(mv_base_model_params)
+model, X_train, y_train, training_params = test_lstm()
+print(model.summary())
 # model, X_train, y_train, training_params = test_resnet()
 #model, X_train, y_train, training_params = test_random_search_resnet()
 
