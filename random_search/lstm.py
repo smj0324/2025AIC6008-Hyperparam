@@ -102,7 +102,7 @@ def start_lstm_random_search(user_parameters):
     })
 
     # 4) test_lstm() 호출 (인자 없이 그대로 실행)
-    model, X_train, y_train, training_hyperparams = test_lstm()
+    model, X_train, y_train, training_hyperparams = test_lstm(hyperparameters)
 
     # 5) test_lstm()이 반환한 training_hyperparams에 epochs, batch_size, learning_rate 적용
     training_hyperparams.update({
@@ -110,5 +110,6 @@ def start_lstm_random_search(user_parameters):
         "batch_size":    batch_size,
         "learning_rate": learning_rate
     })
-
+    print("[DEBUG] 최종 training_hyperparams:", training_hyperparams)
+    
     return model, X_train, y_train, training_hyperparams

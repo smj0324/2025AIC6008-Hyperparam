@@ -151,51 +151,52 @@ def build_and_compile_model(training_params: dict) -> Model:
     return model
 
 
-def test_lstm():
-    """IMDB 영화 리뷰 감정 분석용 LSTM 테스트 (ResNet 스타일)"""
+def test_lstm(training_params=None):
+    """IMDB 영화 리뷰 감정 분석용 LSTM 테스트"""
     
     # ===== IMDB 데이터 로드 및 전처리 =====
     max_features = 10000  # 어휘 크기
     max_length = 500      # 최대 시퀀스 길이
-    
+
     (x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_features)
-    
+
     # 시퀀스 패딩
     x_train = pad_sequences(x_train, maxlen=max_length)
     x_test = pad_sequences(x_test, maxlen=max_length)
-    
+
     # 레이블을 float32로 변환
     y_train = y_train.astype('float32')
     y_test = y_test.astype('float32')
 
-    # ===== LSTM 설정 및 모델 구성 =====
-    training_params = {
-        # 데이터 파라미터
+    # ===== 하이퍼파라미터 기본값 정의 =====
+    default_params = {
         "vocab_size": max_features,
-        "sequence_length": max_length,
+        "max_length": max_length,
         "embedding_dim": 128,
-        
-        # LSTM 핵심 파라미터
         "units": 128,
         "dropout": 0.3,
         "recurrent_dropout": 0.3,
         "num_layers": 1,
         "bidirectional": False,
         "dense_dropout": 0.5,
-        
-        # 훈련 파라미터
         "optimizer": "adam",
         "learning_rate": 0.001,
-        "batch_size": 32,
-        "epochs": 1,
+        "batch_size": 64,
+        "epochs": 10,
         "validation_split": 0.2,
     }
 
+    # 외부에서 전달된 training_params가 있으면 덮어씌움
+    if training_params is not None:
+        default_params.update(training_params)
+    training_params = default_params
+
+    # 모델 생성
     model = build_and_compile_model(training_params)
-    
-    print("LSTM 모델 구성 및 실험 실행 코드 준비 완료.")
+
+    print("✅ LSTM 모델 구성 및 실험 실행 준비 완료.")
     print(f"훈련 데이터 형태: {x_train.shape}")
     print(f"테스트 데이터 형태: {x_test.shape}")
     print(f"클래스 분포 - 긍정: {np.sum(y_train)}, 부정: {len(y_train) - np.sum(y_train)}")
-    
+
     return model, x_train, y_train, training_params
