@@ -74,7 +74,7 @@ def build_and_compile_model(training_params: dict) -> Model:
 
     # LSTM 파라미터 딕셔너리
     lstm_model_params = {
-        "units": units,
+        "units": 64,
         "dropout": dropout,
         "return_sequences": return_sequences,
         "activation": activation,

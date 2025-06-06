@@ -75,9 +75,8 @@ def build_and_compile_model(training_params: dict) -> Model:
 
     # LSTM 파라미터 딕셔너리
     lstm_model_params = {
-        "units": units,
+        "units": 64,
         "dropout": dropout,
-        "recurrent_dropout": recurrent_dropout,
         "return_sequences": return_sequences,
         "activation": activation,
         "recurrent_activation": recurrent_activation,
@@ -93,7 +92,6 @@ def build_and_compile_model(training_params: dict) -> Model:
         "kernel_constraint": kernel_constraint,
         "recurrent_constraint": recurrent_constraint,
         "bias_constraint": bias_constraint,
-        "implementation": implementation,
         "go_backwards": go_backwards,
         "stateful": stateful,
         "time_major": time_major,

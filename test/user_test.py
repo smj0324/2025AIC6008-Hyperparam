@@ -42,10 +42,10 @@ mv_base_model_params = {
 
 # model, X_train, y_train, training_params = test_moblinet(mv_base_model_params)
 model, X_train, y_train, training_params = test_lstm()
-print(model.summary())
+# print(model.summary())
 # model, X_train, y_train, training_params = test_resnet()
 #model, X_train, y_train, training_params = test_random_search_resnet()
 
 #model, X_train, y_train, training_params = start_moblinet_random_search(mv_base_model_params)
-#model, X_train, y_train, training_params = start_lstm_random_search(mv_base_model_params)
+# model, X_train, y_train, training_params = start_lstm_random_search(mv_base_model_params)
 launch_experiment(model, X_train, y_train, training_params=training_params)
