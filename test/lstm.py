@@ -178,7 +178,7 @@ def test_lstm():
         "embedding_dim": 128,
         
         # LSTM 핵심 파라미터
-        "hidden_size": 64,
+        "units": 64,
         "dropout": 0.3,
         "recurrent_dropout": 0.3,
         "num_layers": 1,
